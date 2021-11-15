@@ -29,20 +29,20 @@ For P1 and P11 the following filtration criteria were applied:
 * After changing into group annotations, sequences which had more than a single assignment in naive repertoires were remove.
 
 ```{r, echo=FALSE}
-load("cluster_app/data.rda")
+load("data.rda")
 
 chain = "IGH"
 func <-  data.frame(allele = names(vgerms[[chain]]), functionality = !grepl("(ORF|P)",sapply(seqinr::getAnnot(vgerms_full[[chain]]), function(x) unlist(strsplit(x,"[|]"))[4])), sign = sapply(seqinr::getAnnot(vgerms_full[[chain]]), function(x) unlist(strsplit(x,"[|]"))[4]), stringsAsFactors = F)
 
 mat <- mat_list$IGH$functional$nonsingle$all$`318`
 
-load("cluster_app/data_frac_new2.rda")
+load("data_frac_new2.rda")
 data <- setDT(data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`)
 data[,v_call:=paste0(v_gene,"*",v_allele)]
-load("cluster_app/alleles_dbs.rda")
+load("alleles_dbs.rda")
 allele_db <- alleles_dbs$IGH$functional$nonsingle$all$`318`$complete$`95`
 allele_db <- allele_db %>% rowwise() %>% mutate(gene = getGene(or_allele, strip_d = F, omit_nl = F), group = strsplit(gsub(gene, "", new_allele),"[*]")[[1]][1], gene_group = getGene(new_allele, strip_d = F, omit_nl = F))
-load("cluster_app/functional_groups.rda")
+load("functional_groups.rda")
 func_groups <- functional_groups$IGH$functional$nonsingle$all$`318`$complete$`95`
 
 cols <- c("#FAAB18", "#1380A1","#990000", "#588300")
