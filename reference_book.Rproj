@@ -13,3 +13,4 @@ RnwWeave: Sweave
 LaTeX: pdfLaTeX
 
 BuildType: Website
+WebsitePath: ~/Dropbox (BIU)/genotype_sub_sampling/sister_genes/reference_book
