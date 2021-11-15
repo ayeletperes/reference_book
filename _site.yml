@@ -1,4 +1,5 @@
 name: "functional-groups"
+output_dir: "docs"
 navbar:
   title: "Functional groups"
   left:
