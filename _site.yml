@@ -1,0 +1,10 @@
+name: "functional-groups"
+navbar:
+  title: "Functional groups"
+  left:
+    - text: "Intro"
+      href: index.html
+    - text: "IGHV1-18"
+      href: G1.html
+    - text: "IGHV1-2"
+      href: G1.html

@@ -1,0 +1,239 @@
+---
+title: "Functional groups"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
+pacman::p_load('dplyr', 'tidyr', 'gapminder', 'htmltools',
+               'ggplot2',  'ggalt', 'ggmsa',
+               'forcats', 'R.utils', 'png', 'BiocManager',
+               'grid', 'ggpubr', 'scales', 'dendextend',
+               'bbplot', 'data.table', 'dplyr', 'Biostrings', 'alakazam', "unikn", 
+               'plotly', 'ggdendro', 'msa', 'msaR', 'DT', 'DECIPHER', "RColorBrewer")
+```
+
+```{r}
+source("functions.R")
+```
+
+Summary statistics for each of the functional groups declared in the app.
+
+The app includes the P1 and P11 naive datasets and the P4 non-naive dataset.
+
+For P1 and P11 the following filtration criteria were applied:
+
+* Functional sequence, no stop codons or frame shifts.
+* Sequences which start from position 1 of the V gene.
+* Sequences which didn't have gaps open (-) and didn't include any N's
+* After changing into group annotations, sequences which had more than a single assignment in naive repertoires were remove.
+
+```{r, echo=FALSE}
+load("cluster_app/data.rda")
+
+chain = "IGH"
+func <-  data.frame(allele = names(vgerms[[chain]]), functionality = !grepl("(ORF|P)",sapply(seqinr::getAnnot(vgerms_full[[chain]]), function(x) unlist(strsplit(x,"[|]"))[4])), sign = sapply(seqinr::getAnnot(vgerms_full[[chain]]), function(x) unlist(strsplit(x,"[|]"))[4]), stringsAsFactors = F)
+
+mat <- mat_list$IGH$functional$nonsingle$all$`318`
+
+load("cluster_app/data_frac_new2.rda")
+data <- setDT(data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`)
+data[,v_call:=paste0(v_gene,"*",v_allele)]
+load("cluster_app/alleles_dbs.rda")
+allele_db <- alleles_dbs$IGH$functional$nonsingle$all$`318`$complete$`95`
+allele_db <- allele_db %>% rowwise() %>% mutate(gene = getGene(or_allele, strip_d = F, omit_nl = F), group = strsplit(gsub(gene, "", new_allele),"[*]")[[1]][1], gene_group = getGene(new_allele, strip_d = F, omit_nl = F))
+load("cluster_app/functional_groups.rda")
+func_groups <- functional_groups$IGH$functional$nonsingle$all$`318`$complete$`95`
+
+cols <- c("#FAAB18", "#1380A1","#990000", "#588300")
+
+pal <- cols %>% 
+  newpal(names = c("orangy", "bluish", "redish", "greeny"))
+
+```
+
+The groups were created with similarity of 95% based on complete linkage and functional sequences and up to position 318.
+
+## IGHV1-18
+```{r,echo=FALSE}
+g = "IGHV1-18"
+gr <- allele_db %>% filter(gene == g) %>% pull(group) %>% unique()
+g_group <- allele_db %>% filter(gene == g) %>% pull(gene_group) %>% unique()
+```
+
+The group of IGHV1-18 includes `r sum(grepl(paste0(g,"[*]"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]"), func$allele)])` out of the alleles are functional.
+
+For each allele we counted the number of appearances across the population, any appearance was considered valid. 
+
+```{r}
+ggplot(data[grepl(g_group,v_gene)], aes(v_allele, fill = v_allele)) + geom_bar() + facet_grid(.~project) + labs(x = "allele", y = "# Individuals", fill = "") + 
+  bbc_style() + scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000")) + theme(legend.position = "none")
+```
+
+Based on the viewd alleles, we calculated the distance between the germline sequences.
+
+```{r, fig.width=18,fig.height=24}
+seq_align(allele_db, vgerms, chain, mat, g_group)
+```
+
+To examine the potential cutoff we observed the sequence depth for each allele
+
+```{r}
+ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + geom_boxplot() + geom_jitter() + labs(x = "allele", y = "# Sequences", color = "") + 
+  bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000"))
+```
+
+
+We set an initial cutoff of $0.5%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
+
+
+```{r}
+
+tmp_allele_db <-
+  allele_db %>% filter(grepl(func_groups[as.character(g)], new_allele)) %>%
+  dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+
+or_allele <-
+  setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
+    paste0(func_groups[as.character(g)], "[*]"),
+    "",
+    tmp_allele_db$new_allele
+  )))
+
+allele_thresh = 0.5
+
+tmp <- data_cutoff(data, func_groups, g, allele_thresh, or_allele)
+
+```
+
+With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
+
+```{r, warning = F, error=F, message = F}
+p_list <- c()
+for(i in as.character(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))){
+  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
+                    scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
+  #
+}
+
+tagList(p_list)
+```
+
+
+From the plots we can that the dominantes alleles *01* and *04*. They appear in all states. Alleles *01* and *03* are closer to eachother, hence in state 3 for the threshold of $0.5%$ I suspect that the sequences are mis-assigned and should be allele *01*. Otherwise we should have seen the allele in one of the other stated as well.
+
+Further the relations between *01* and *04* tends to heterozygousity with equal usage, thus the appearance of the lowly expressed allele in state 2 are likely erroneous.
+
+From the results we belive that the cutoff for this group should be closer to $20%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+
+```{r}
+
+tableData <- data_cutoff(data, func_groups, g, 20, or_allele) %>% group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = mean(freq)) %>% group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
+
+DT::datatable(
+        tableData,
+        options = list(dom = "tipr"),
+        selection = 'none'
+      )
+
+```
+
+\newpage
+
+
+## IGHV1-2
+```{r,echo=FALSE}
+g = "IGHV1-2"
+gr <- allele_db %>% filter(gene == g) %>% pull(group) %>% unique()
+g_group <- allele_db %>% filter(gene == g) %>% pull(gene_group) %>% unique()
+```
+
+The group of IGHV1-2 includes `r sum(grepl(paste0(g,"[*]"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]"), func$allele)])` out of the alleles are functional.
+
+For each allele we counted the number of appearances across the population, any appearance was considered valid. 
+
+```{r}
+
+ggplot(data[grepl(g_group,v_gene)], aes(v_allele, fill = v_allele)) + geom_bar() + facet_grid(.~project) + labs(x = "allele", y = "# Individuals", fill = "") + 
+  bbc_style()  + theme(legend.position = "none") + scale_fill_manual(values = pal %>% usecol(n = 10))
+```
+
+Based on the viewd alleles, we calculated the distance between the germline sequences.
+
+```{r, fig.width=18,fig.height=24}
+seq_align(allele_db, vgerms, chain, mat, g_group)
+```
+
+To examine the potential cutoff we observed the sequence depth for each allele
+
+```{r}
+ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + geom_boxplot() + geom_jitter() + labs(x = "allele", y = "# Sequences", color = "") + 
+  bbc_style() + scale_color_manual(values = pal %>% usecol(n = 10))
+```
+
+
+We set an initial cutoff of $0.5%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
+
+
+```{r}
+
+tmp_allele_db <-
+  allele_db %>% filter(grepl(func_groups[as.character(g)], new_allele)) %>%
+  dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+
+or_allele <-
+  setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
+    paste0(func_groups[as.character(g)], "[*]"),
+    "",
+    tmp_allele_db$new_allele
+  )))
+
+allele_thresh = 0.5
+
+tmp <- data_cutoff(data, func_groups, g, allele_thresh, or_allele)
+
+```
+
+With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
+
+```{r, warning = F, error=F, message = F}
+p_list <- c()
+for(i in as.character(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))){
+  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
+                    scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
+  #
+}
+
+tagList(p_list)
+```
+
+
+From the plots we can that the homozygous alleles *02* and *04*. However, in an heterozygous state the tradoff between the allele differ by the combinations. 
+
+Allele *04* tend to be less dominante when coupled with another allele, making the observation we see closer to $1$ in state 2 to be incorect and they should be homozygous. 
+
+Allele *02* when coupled with either allele *06* or *07* there is an equal allelic usage.
+
+Allele *05* is lowly expressed in all combinations and state, making him a suspect of mis-assignment. When copuled with allele *04* its relative use is closer to $0.1$ but the amount of sequences is quit low. 
+
+Allele *06* seems to have high usage when in combinations with other alleles, hence it is less likely that in states 3 and 4 it will apear in such low usage. In those cases we can speculate of a mis-assignment, which could be allele *05*, it's closeset allele. 
+
+
+From the results we belive that the cutoff for this group should be closer to $2%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+
+```{r}
+
+tableData <- data_cutoff(data, func_groups, g, 2, or_allele) %>% group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = mean(freq)) %>% group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
+
+DT::datatable(
+        tableData,
+        options = list(dom = "tipr"),
+        selection = 'none'
+      )
+
+```
+
+
+
+
+
