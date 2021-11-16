@@ -4,7 +4,7 @@ output:
   html_document:
     toc: true
     toc_float: true
-runtime: shiny
+#runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -127,50 +127,51 @@ This section is editable by clicking on the edit button below. To refresh the se
 You can access the file also from [here](https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5)
 
 ```{r, message=F, warning=F, error=F, echo=F}
+knitr::include_url("https://peresay.shinyapps.io/G2_group/?group=IGHV1-18")
 # Authenticate and save token for later use2
-token <- drop_auth(rdstoken = "dropbox_token.rds")
-
-# Retrieveing your file is as simple as
-drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
-              overwrite = TRUE, verbose = F)
-#drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
-invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
-
-ui <- fluidPage(
-
-    # Application title
-    mainPanel(
-      shiny::actionButton(inputId='ab1', label="Edit text", 
-                          icon = icon("edit"), 
-                          onclick ="window.open('https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5')"),
-      
-      shiny::actionButton(inputId='ab2', label="Reload text", 
-                          icon = icon("sync-alt")),
-      
-      htmlOutput("df_output")
-    )
-)
-
-server <- function(input, output) {
-  
-  observeEvent(input$ab2, {
-      drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
-                overwrite = TRUE, verbose = F)
-      #drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
-      
-      rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = F)
-      output$markdown <- renderUI({
-        withMathJax(includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE)))
-    })
-    
-  })
-  
-  output$markdown <- renderUI({
-    includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE))
-  })
-}
-
-shinyApp(ui = ui, server = server)
+# token <- drop_auth(rdstoken = "dropbox_token.rds")
+# 
+# # Retrieveing your file is as simple as
+# drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
+#               overwrite = TRUE, verbose = F)
+# #drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
+# invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
+# 
+# ui <- fluidPage(
+# 
+#     # Application title
+#     mainPanel(
+#       shiny::actionButton(inputId='ab1', label="Edit text", 
+#                           icon = icon("edit"), 
+#                           onclick ="window.open('https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5')"),
+#       
+#       shiny::actionButton(inputId='ab2', label="Reload text", 
+#                           icon = icon("sync-alt")),
+#       
+#       htmlOutput("df_output")
+#     )
+# )
+# 
+# server <- function(input, output) {
+#   
+#   observeEvent(input$ab2, {
+#       drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
+#                 overwrite = TRUE, verbose = F)
+#       #drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
+#       
+#       rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = F)
+#       output$markdown <- renderUI({
+#         withMathJax(includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE)))
+#     })
+#     
+#   })
+#   
+#   output$markdown <- renderUI({
+#     includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE))
+#   })
+# }
+# 
+# shinyApp(ui = ui, server = server)
 
 ```
 
@@ -217,6 +218,19 @@ allele_thresh = 12.5
 
 tmp <- data_cutoff(data, func_groups, g, allele_thresh, or_allele)
 
+```
+
+```{r, echo=FALSE}
+# Get the current figure size in pixels:
+get_w <- function() {
+  with(knitr::opts_current$get(c("fig.width", "dpi", "fig.retina")),
+       fig.width*dpi/fig.retina)
+}
+
+get_h <- function() {
+  with(knitr::opts_current$get(c("fig.height", "dpi", "fig.retina")),
+       fig.height*dpi/fig.retina)
+}
 ```
 
 

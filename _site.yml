@@ -1,5 +1,6 @@
 name: "functional-groups"
 output_dir: "docs"
+theme: theme.css
 navbar:
   title: "Functional groups"
   left:
@@ -11,6 +12,9 @@ navbar:
         href: G1.html
       - text: "IGHV1-2"
         href: G2.html
-output:
-  html_document:
-    theme: yeti
+  right:
+    - icon: fab fa-github
+      href: https://github.com/ayeletperes/reference_book
+    - icon: fas fa-database
+      href: https://peresay.shinyapps.io/cluster_app/
+output: distill::distill_article
