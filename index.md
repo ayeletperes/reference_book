@@ -1,15 +1,41 @@
 ---
 title: "Functional groups"
 output:
-  html_document:
+  distill::distill_article:
     toc: true
     toc_float: true
     keep_md: yes
-runtime: shiny
 ---
 
+<style>
+html {
+  scroll-behavior: smooth;
+}
+d-article {
+    contain: none;
+  }
+#TOC {
+  position: fixed;
+  z-index: 50;
+  background: #ebebeb;     /* or   background: white; */
+  padding: 10px;           /* optional */
+  border-radius: 5px;      /* optional */
+  }
+
+/* Hide the ToC when resized to mobile or tablet:  480px, 768px, 900px */
+@media screen and (max-width: 900px) {
+#TOC {
+    position: relative;
+  }
+}
+</style>
 
 
+
+<div class="layout-chunk" data-layout="l-body">
+
+
+</div>
 
 
 ## Sequence pre-processing
@@ -29,5 +55,11 @@ The groups were created with similarity of 95% based on complete linkage and fun
 
 ## Projects sequence depth
 
-![](index_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+<div class="layout-chunk" data-layout="l-body">
+![](index_files/figure-html5/unnamed-chunk-2-1.png)<!-- -->
 
+</div>
+
+
+```{.r .distill-force-highlighting-css}
+```
