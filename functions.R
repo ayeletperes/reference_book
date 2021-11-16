@@ -38,7 +38,7 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   
   tmp_plot$loc2 <- loc2[tmp_plot$v_allele_axis]
   
-  if(state!=1 | length(unique(tmp_plot$v_alleles_p))!=1){
+  if(state!=1 & length(unique(tmp_plot$v_alleles_p))!=1){
   loc_jitter <- c()
   for(ii in unique(tmp_plot$loc2)){
     loc_jitter[[ii]] <-
