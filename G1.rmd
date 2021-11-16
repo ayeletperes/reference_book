@@ -198,3 +198,35 @@ DT::datatable(
 ```
 
 [this site](https://peresay.shinyapps.io/cluster_app/?url=%22page_allele%22&func_group=%22IGHV1-2%22&allele_thresh=%212.52%22)
+
+
+```{r}
+
+tmp_allele_db <-
+  allele_db %>% filter(grepl(func_groups[as.character(g)], new_allele)) %>%
+  dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+
+or_allele <-
+  setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
+    paste0(func_groups[as.character(g)], "[*]"),
+    "",
+    tmp_allele_db$new_allele
+  )))
+
+allele_thresh = 12.5
+
+tmp <- data_cutoff(data, func_groups, g, allele_thresh, or_allele)
+
+```
+
+
+```{r, warning = F, error=F, message = F}
+p_list <- c()
+for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::pull(zygousity_state)))){
+  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
+                    scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
+  #
+}
+
+tagList(p_list)
+```

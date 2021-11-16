@@ -29,5 +29,5 @@ The groups were created with similarity of 95% based on complete linkage and fun
 
 ## Projects sequence depth
 
-`<div id="outbc49333f373160df" class="shiny-plot-output" style="width:100%;height:400px;"></div>`{=html}
+![](index_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 

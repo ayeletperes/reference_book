@@ -45,10 +45,10 @@ data <- data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`
 
 depth <- data %>% dplyr::group_by(project, subject) %>% dplyr::summarise(counts = sum(count))
 
-renderPlot({ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
+ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
   bbplot::bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000")) +
   theme(axis.text.x = element_text(size = 12), 
         axis.text.y = element_text(size = 14), legend.position = "none")
-})
+
 ```
 
