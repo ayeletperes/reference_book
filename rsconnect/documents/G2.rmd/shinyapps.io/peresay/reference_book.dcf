@@ -1,0 +1,13 @@
+name: reference_book
+title:
+username:
+account: peresay
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5133227
+bundleId: 5256793
+url: https://peresay.shinyapps.io/reference_book/
+when: 1637042963.55063
+lastSyncTime: 1637042963.55066
+asMultiple: FALSE
+asStatic: FALSE
