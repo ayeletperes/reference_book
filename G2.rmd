@@ -1,16 +1,19 @@
 ---
 title: "IGHV1-2"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
-pacman::p_load('dplyr', 'tidyr', 'gapminder', 'htmltools',
-               'ggplot2',  'ggalt', 'ggmsa',
-               'forcats', 'R.utils', 'png', 'BiocManager',
-               'grid', 'ggpubr', 'scales', 'dendextend',
-               'bbplot', 'data.table', 'dplyr', 'Biostrings', 'alakazam', "unikn", 
-               'plotly', 'ggdendro', 'msa', 'msaR', 'DT', 'DECIPHER', "RColorBrewer")
+options(repos = BiocManager::repositories())
+pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
+               'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
+               'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
+               'plotly', 'ggdendro', "RColorBrewer", install = F)
 ```
 
 ```{r}
@@ -47,6 +50,8 @@ gr <- allele_db %>% filter(gene == g) %>% pull(group) %>% unique()
 g_group <- allele_db %>% filter(gene == g) %>% pull(gene_group) %>% unique()
 ```
 
+## Allele appearnce 
+
 The group of IGHV1-2 includes `r sum(grepl(paste0(g,"[*]"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]"), func$allele)])` out of the alleles are functional.
 
 For each allele we counted the number of appearances across the population, any appearance was considered valid. 
@@ -54,24 +59,33 @@ For each allele we counted the number of appearances across the population, any 
 ```{r}
 
 ggplot(data[grepl(g_group,v_gene)], aes(v_allele, fill = v_allele)) + geom_bar() + facet_grid(.~project) + labs(x = "allele", y = "# Individuals", fill = "") + 
-  bbc_style()  + theme(legend.position = "none") + scale_fill_manual(values = pal %>% usecol(n = 10))
+  bbplot::bbc_style()  + theme(legend.position = "none") + scale_fill_manual(values = pal %>% usecol(n = 10))
 ```
+
+## Group alignment
 
 Based on the viewd alleles, we calculated the distance between the germline sequences.
 
-```{r, fig.width=18,fig.height=24}
-seq_align(allele_db, vgerms, chain, mat, g_group)
+```{r, fig.width=18,fig.height=30}
+v_calls <- unique(data[grepl(g_group,v_gene),v_call])
+seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 ```
+
+## Sequence depth
 
 To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + geom_boxplot() + geom_jitter() + labs(x = "allele", y = "# Sequences", color = "") + 
-  bbc_style() + scale_color_manual(values = pal %>% usecol(n = 10))
+ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + 
+  geom_boxplot(outlier.shape=NA) +
+  geom_point(position=position_jitterdodge(jitter.width = 0.1)) + 
+  labs(x = "allele", y = "# Sequences", color = "") + 
+  bbplot::bbc_style() + scale_color_manual(values = pal %>% usecol(n = 10))
 ```
 
+## 0.5% cutoff 
 
-We set an initial cutoff of $0.5%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
+We set an initial cutoff of $0.5\%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
 
 
 ```{r}
@@ -97,7 +111,7 @@ With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(
 
 ```{r, warning = F, error=F, message = F}
 p_list <- c()
-for(i in as.character(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))){
+for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::pull(zygousity_state)))){
   p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
                     scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
   #
@@ -106,33 +120,85 @@ for(i in as.character(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity
 tagList(p_list)
 ```
 
+## Observations
 
-From the plots we can that the homozygous alleles *02* and *04*. However, in an heterozygous state the tradoff between the allele differ by the combinations. 
+This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-Allele *04* tend to be less dominante when coupled with another allele, making the observation we see closer to $1$ in state 2 to be incorect and they should be homozygous. 
+```{r, message=F, echo=F, warning=F}
+# Authenticate and save token for later use2
+token <- drop_auth(rdstoken = "dropbox_token.rds")
 
-Allele *02* when coupled with either allele *06* or *07* there is an equal allelic usage.
+# Retrieveing your file is as simple as
+drop_download("public/conclusions/IGHV1-2.docx", local_path = "./IGHV1-2.docx",
+              overwrite = TRUE)
+drop_df <- textreadr::read_docx("./IGHV1-2.docx")
+invisible(rmarkdown::pandoc_convert(input = "IGHV1-2.docx", to = "markdown", output = "IGHV1-2_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml"), verbose = FALSE))
 
-Allele *05* is lowly expressed in all combinations and state, making him a suspect of mis-assignment. When copuled with allele *04* its relative use is closer to $0.1$ but the amount of sequences is quit low. 
+ui <- fluidPage(
 
-Allele *06* seems to have high usage when in combinations with other alleles, hence it is less likely that in states 3 and 4 it will apear in such low usage. In those cases we can speculate of a mis-assignment, which could be allele *05*, it's closeset allele. 
+    # Application title
+    mainPanel(
+      shiny::actionButton(inputId='ab1', label="Edit text", 
+                          icon = icon("edit"), 
+                          onclick ="window.open('https://www.dropbox.com/scl/fi/crphl3u49fmkw8wnb5v71/IGHV1-2.docx?dl=0&rlkey=l54oqhrlxx8wyp6bywr224sx0')"),
+      
+      shiny::actionButton(inputId='ab2', label="Reload text", 
+                          icon = icon("sync-alt")),
+      
+      #htmlOutput("df_output"),
+      uiOutput('markdown')
+    )
+)
 
+server <- function(input, output) {
+    
+  observeEvent(input$ab2, {
+    drop_download("public/conclusions/IGHV1-2.docx", local_path = "./IGHV1-2.docx",
+              overwrite = TRUE)
+    #drop_df <- textreadr::read_docx("./IGHV1-2.docx")
+    
+    rmarkdown::pandoc_convert(input = "IGHV1-2.docx", to = "markdown", output = "IGHV1-2_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml"), verbose = F)
+    output$markdown <- renderUI({
+      withMathJax(includeMarkdown(knitr::knit('IGHV1-2_docx.md', quiet = TRUE)))
+    #HTML(markdown::markdownToHTML(knitr::knit('IGHV1-2_docx.Rmd', quiet = TRUE)))
+  })
+    
+  })
+    
+  # output$df_output <- renderUI({
+  #       if(input$ab2) return()
+  #       HTML(paste(drop_df, collapse = "<br/><br/>"))
+  #   })
+  
+  output$markdown <- renderUI({
+    withMathJax(includeMarkdown(knitr::knit('./IGHV1-2_docx.md', quiet = TRUE)))
+    #HTML(markdown::markdownToHTML(knitr::knit('IGHV1-2_docx.Rmd', quiet = TRUE)))
+  })
+}
 
-From the results we belive that the cutoff for this group should be closer to $2%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+shinyApp(ui = ui, server = server)
+
+```
+
+## Conclusions
+
+From the results we belive that the cutoff for this group should be closer to $2\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
 
 ```{r}
 
-tableData <- data_cutoff(data, func_groups, g, 2, or_allele) %>% group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = mean(freq)) %>% group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
+tableData <- data_cutoff(data, func_groups, g, 2, or_allele) %>% dplyr::group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = IQR(freq)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
 
 DT::datatable(
         tableData,
         options = list(dom = "tipr"),
-        selection = 'none'
+        selection = 'none',
+        colnames = c(
+          "Zygousity state" = "zygousity_state",
+          "V\nallele" = "v_alleles_abc",
+          "IQR fraction" = "fractions"
+        )
       )
 
 ```
 
-
-
-
-
+For interactive play on the threshold and relative allele fractions, please refer to [this site](https://peresay.shinyapps.io/cluster_app/?url=%22page_allele%22&func_group=%22IGHV1-2%22&allele_thresh=%222%22)

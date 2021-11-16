@@ -12,9 +12,9 @@ hline <- function(y = 0, color = "red") {
   )
 }
 
-plot_zygousity <- function(data, state, allele_thresh, g){
+plot_zygousity <- function(tmp, state, allele_thresh, g){
   
-  tmp_plot <- filter(data, zygousity_state == state) %>% rowwise() %>% mutate(
+  tmp_plot <- filter(tmp, zygousity_state == state) %>% rowwise() %>% mutate(
     v_alleles_p = v_alleles_abc,
     v_alleles_p = gsub(";", "\n", v_alleles_p),
     text = paste(
@@ -38,13 +38,20 @@ plot_zygousity <- function(data, state, allele_thresh, g){
   
   tmp_plot$loc2 <- loc2[tmp_plot$v_allele_axis]
   
-  loc_jitter <-
-    seq(0, 0.8, by = 0.8 / length(unique(tmp_plot$v_alleles_p)))
+  loc_jitter <- c()
+  for(ii in unique(tmp_plot$loc2)){
+    loc_jitter[[ii]] <-
+      seq(0, 0.5, length.out = length(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==ii])))
+    
+    loc_jitter[[ii]]  <-
+      setNames(loc_jitter[[ii]] , sort(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==ii])))
+  }
   
-  loc_jitter <-
-    setNames(loc_jitter, sort(unique(tmp_plot$v_alleles_p)))
+  
   tmp_plot <-
-    tmp_plot %>% arrange(loc2, v_alleles_p) %>% group_by(loc2) %>% mutate(loc_plot = loc2 + loc_jitter[v_alleles_p],) %>% ungroup() %>% mutate(jitter_offset = jitter(loc_plot))
+    tmp_plot %>% arrange(loc2, v_alleles_p) %>% group_by(loc2) %>% 
+    mutate(loc_plot = loc2 + loc_jitter[[unique(loc2)]][v_alleles_p],) %>% ungroup() %>% 
+    mutate(jitter_offset = jitter(loc_plot))
   
   tickvals_tmp <-
     tmp_plot %>% pull(loc_plot) %>% unique() %>% sort()
@@ -146,9 +153,9 @@ data_cutoff <- function(tmp, func_groups, g, allele_thresh = 0.5, or_allele){
 }
 
 
-seq_align <- function(allele_db, vgerms, chain, mat, g_group){
-  alleles <- allele_db %>% filter(new_allele %in% data[grepl(g_group,v_gene),v_call] %>% unique()) %>% pull(or_allele)
-  new_alleles <- setNames(allele_db %>% filter(new_allele %in% data[grepl(g_group,v_gene),v_call] %>% unique()) %>% pull(new_allele), alleles)
+seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
+  alleles <- allele_db %>% dplyr::filter(new_allele %in% v_calls) %>% dplyr::pull(or_allele)
+  new_alleles <- setNames(allele_db %>% filter(new_allele %in% v_calls) %>% dplyr::pull(new_allele), alleles)
   sequences <- substr(vgerms[[chain]][alleles],1,318)
   names(sequences) <- new_alleles[names(sequences)]
   
@@ -161,7 +168,7 @@ seq_align <- function(allele_db, vgerms, chain, mat, g_group){
   dend <- as.dendrogram(hc)
   dend <- dendextend::set(dend, "labels_cex", 1.2)
   ggd1 <- as.ggdend(dend)
-  p_dend <- ggplot(ggd1, theme = bbc_style())  + theme(
+  p_dend <- ggplot(ggd1, theme = bbplot::bbc_style())  + theme(
     axis.line = element_blank(), axis.title.x = element_blank(),
     axis.ticks.x = element_blank(), axis.text.x = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
@@ -182,7 +189,7 @@ seq_align <- function(allele_db, vgerms, chain, mat, g_group){
   p1 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id<=80, ], aes(x=(pos), y=(allele))) + 
     geom_tile(aes(fill=value),colour="white") + 
     geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(1, 80)) + bbc_style()  +
+    coord_equal(expand = F, xlim = c(1, 80)) + bbplot::bbc_style()  +
     scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
       axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
       axis.ticks.y = element_blank(),
@@ -193,7 +200,7 @@ seq_align <- function(allele_db, vgerms, chain, mat, g_group){
   p2 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>80 & matrix_sequences_plot$id <=160, ], aes(x=(pos), y=(allele))) + 
     geom_tile(aes(fill=value),colour="white") + 
     geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(81, 160)) + bbc_style()  + 
+    coord_equal(expand = F, xlim = c(81, 160)) + bbplot::bbc_style()  + 
     scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
       axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
       axis.ticks.y = element_blank(),
@@ -204,7 +211,7 @@ seq_align <- function(allele_db, vgerms, chain, mat, g_group){
   p3 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>160 & matrix_sequences_plot$id <=240, ], aes(x=(pos), y=(allele))) + 
     geom_tile(aes(fill=value),colour="white") + 
     geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(161, 240)) + bbc_style()  + 
+    coord_equal(expand = F, xlim = c(161, 240)) + bbplot::bbc_style()  + 
     scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
       axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
       axis.ticks.y = element_blank(),
@@ -216,7 +223,7 @@ seq_align <- function(allele_db, vgerms, chain, mat, g_group){
   p4 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>240, ], aes(x=(pos), y=(allele))) + 
     geom_tile(aes(fill=value),colour="white") + 
     geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(240, 318)) + bbc_style()  + 
+    coord_equal(expand = F, xlim = c(240, 318)) + bbplot::bbc_style()  + 
     scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
       axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
       axis.ticks.y = element_blank(),

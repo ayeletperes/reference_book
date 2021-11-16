@@ -1,16 +1,19 @@
 ---
 title: "IGHV1-18"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
-pacman::p_load('dplyr', 'tidyr', 'gapminder', 'htmltools',
-               'ggplot2',  'ggalt', 'ggmsa',
-               'forcats', 'R.utils', 'png', 'BiocManager',
-               'grid', 'ggpubr', 'scales', 'dendextend',
-               'bbplot', 'data.table', 'dplyr', 'Biostrings', 'alakazam', "unikn", 
-               'plotly', 'ggdendro', 'msa', 'msaR', 'DT', 'DECIPHER', "RColorBrewer")
+options(repos = BiocManager::repositories())
+pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
+               'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
+               'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
+               'plotly', 'ggdendro', "RColorBrewer", install = F)
 ```
 
 ```{r}
@@ -48,30 +51,41 @@ gr <- allele_db %>% filter(gene == g) %>% pull(group) %>% unique()
 g_group <- allele_db %>% filter(gene == g) %>% pull(gene_group) %>% unique()
 ```
 
+## Allele appearnce 
+
 The group of IGHV1-18 includes `r sum(grepl(paste0(g,"[*]"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]"), func$allele)])` out of the alleles are functional.
 
-For each allele we counted the number of appearances across the population, any appearance was considered valid. 
+For each allele we counted the number of appearances across the population, any appearance was considered valid. # no cutoff applied
 
 ```{r}
 ggplot(data[grepl(g_group,v_gene)], aes(v_allele, fill = v_allele)) + geom_bar() + facet_grid(.~project) + labs(x = "allele", y = "# Individuals", fill = "") + 
-  bbc_style() + scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000")) + theme(legend.position = "none")
+  bbplot::bbc_style() + scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000")) + theme(legend.position = "none")
 ```
+
+## Group alignment
 
 Based on the viewd alleles, we calculated the distance between the germline sequences.
 
-```{r, fig.width=18,fig.height=24}
-seq_align(allele_db, vgerms, chain, mat, g_group)
+```{r, fig.width=18,fig.height=30}
+v_calls <- unique(data[grepl(g_group,v_gene),v_call])
+seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 ```
 
-To examine the potential cutoff we observed the sequence depth for each allele
+## Sequence depth
+
+To examine the potential cutoff we observed the sequence depth for each allele # fix jitter
 
 ```{r}
-ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + geom_boxplot() + geom_jitter() + labs(x = "allele", y = "# Sequences", color = "") + 
-  bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000"))
+ggplot(data[grepl(g_group,v_gene)], aes(factor(v_allele), count, color = project)) + 
+  geom_boxplot(outlier.shape=NA)+
+  geom_point(position=position_jitterdodge(jitter.width = 0.1)) + 
+  labs(x = "allele", y = "# Sequences", color = "") + 
+  bbplot::bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000"))
 ```
 
+## 0.5% cutoff 
 
-We set an initial cutoff of $0.5%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
+We set an initial cutoff of $0.5\%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
 
 
 ```{r}
@@ -97,7 +111,7 @@ With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(
 
 ```{r, warning = F, error=F, message = F}
 p_list <- c()
-for(i in as.character(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))){
+for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::pull(zygousity_state)))){
   p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
                     scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
   #
@@ -106,21 +120,79 @@ for(i in as.character(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity
 tagList(p_list)
 ```
 
+## Observations
 
-From the plots we can that the dominantes alleles *01* and *04*. They appear in all states. Alleles *01* and *03* are closer to eachother, hence in state 3 for the threshold of $0.5%$ I suspect that the sequences are mis-assigned and should be allele *01*. Otherwise we should have seen the allele in one of the other stated as well.
+This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-Further the relations between *01* and *04* tends to heterozygousity with equal usage, thus the appearance of the lowly expressed allele in state 2 are likely erroneous.
+```{r, message=F, warning=F, error=F, echo=F}
+# Authenticate and save token for later use2
+token <- drop_auth(rdstoken = "dropbox_token.rds")
 
-From the results we belive that the cutoff for this group should be closer to $20%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+# Retrieveing your file is as simple as
+drop_download("public/conclusions/IGHV1-18.docx", local_path = "./IGHV1-18.docx",
+              overwrite = TRUE, verbose = F)
+#drop_df <- textreadr::read_docx("./IGHV1-18.docx")
+invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml"), verbose = FALSE))
+
+ui <- fluidPage(
+
+    # Application title
+    mainPanel(
+      shiny::actionButton(inputId='ab1', label="Edit text", 
+                          icon = icon("edit"), 
+                          onclick ="window.open('https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5')"),
+      
+      shiny::actionButton(inputId='ab2', label="Reload text", 
+                          icon = icon("sync-alt")),
+      
+      htmlOutput("df_output")
+    )
+)
+
+server <- function(input, output) {
+  
+  observeEvent(input$ab2, {
+      drop_download("public/conclusions/IGHV1-18.docx", local_path = "./IGHV1-18.docx",
+                overwrite = TRUE, verbose = F)
+      #drop_df <- textreadr::read_docx("./IGHV1-18.docx")
+      
+      rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml"), verbose = F)
+      output$markdown <- renderUI({
+        withMathJax(includeMarkdown(knitr::knit('./IGHV1-18_docx.md', quiet = TRUE)))
+    })
+    
+  })
+  
+  output$markdown <- renderUI({
+    includeMarkdown(knitr::knit('./IGHV1-18_docx.md', quiet = TRUE))
+  })
+}
+
+shinyApp(ui = ui, server = server)
+
+```
+
+## Conclusions
+
+From the results we belive that the cutoff for this group should be closer to $12.5\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
 
 ```{r}
 
-tableData <- data_cutoff(data, func_groups, g, 20, or_allele) %>% group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = mean(freq)) %>% group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
+tableData <- data_cutoff(data, func_groups, g, 12.5, or_allele) %>% dplyr::group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = IQR(freq)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
 
 DT::datatable(
         tableData,
         options = list(dom = "tipr"),
-        selection = 'none'
+        selection = 'none',
+        colnames = c(
+          "Zygousity state" = "zygousity_state",
+          "V\nallele" = "v_alleles_abc",
+          "IQR fraction" = "fractions"
+        )
       )
 
+# column names change to Zygousity state, alleles combinations, IQR 
+
 ```
+
+[this site](https://peresay.shinyapps.io/cluster_app/?url=%22page_allele%22&func_group=%22IGHV1-2%22&allele_thresh=%212.52%22)
