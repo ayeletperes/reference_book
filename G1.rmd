@@ -129,9 +129,9 @@ This section is editable by clicking on the edit button below. To refresh the se
 token <- drop_auth(rdstoken = "dropbox_token.rds")
 
 # Retrieveing your file is as simple as
-drop_download("public/conclusions/IGHV1-18.docx", local_path = "./IGHV1-18.docx",
+drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
               overwrite = TRUE, verbose = F)
-#drop_df <- textreadr::read_docx("./IGHV1-18.docx")
+#drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
 invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
 
 ui <- fluidPage(
@@ -152,19 +152,19 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   observeEvent(input$ab2, {
-      drop_download("public/conclusions/IGHV1-18.docx", local_path = "./IGHV1-18.docx",
+      drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
                 overwrite = TRUE, verbose = F)
-      #drop_df <- textreadr::read_docx("./IGHV1-18.docx")
+      #drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
       
       rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = F)
       output$markdown <- renderUI({
-        withMathJax(includeMarkdown(knitr::knit('./IGHV1-18_docx.md', quiet = TRUE)))
+        withMathJax(includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE)))
     })
     
   })
   
   output$markdown <- renderUI({
-    includeMarkdown(knitr::knit('./IGHV1-18_docx.md', quiet = TRUE))
+    includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE))
   })
 }
 
