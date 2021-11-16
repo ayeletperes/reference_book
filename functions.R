@@ -38,6 +38,7 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   
   tmp_plot$loc2 <- loc2[tmp_plot$v_allele_axis]
   
+  if(state!=1 | length(unique(tmp_plot$v_alleles_p))!=1){
   loc_jitter <- c()
   for(ii in unique(tmp_plot$loc2)){
     loc_jitter[[ii]] <-
@@ -52,6 +53,12 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
     tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
    dplyr:: mutate(loc_plot = loc2 + loc_jitter[[unique(loc2)]][v_alleles_p],) %>% ungroup() %>% 
     dplyr::mutate(jitter_offset = (loc_plot))
+  }else{
+    tmp_plot <-
+      tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
+      dplyr:: mutate(loc_plot = loc2,) %>% ungroup() %>% 
+      dplyr::mutate(jitter_offset = (loc_plot))
+  }
   
   tickvals_tmp <-
     tmp_plot %>% dplyr::pull(loc_plot) %>% unique() %>% sort()
