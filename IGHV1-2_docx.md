@@ -1,3 +1,7 @@
+---
+title: dropbox doc
+---
+
 -   From the plots we can that the homozygous alleles **02** and **04**. However, in an heterozygous state the tradeoff between the allele differ by the combinations.
 
 -   Allele **04** tend to be less dominant when coupled with another allele, making the observation we see closer to *1* in state 2 to be incorrect and they should be homozygous.

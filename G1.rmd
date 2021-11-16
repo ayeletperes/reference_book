@@ -132,7 +132,7 @@ token <- drop_auth(rdstoken = "dropbox_token.rds")
 drop_download("public/conclusions/IGHV1-18.docx", local_path = "./IGHV1-18.docx",
               overwrite = TRUE, verbose = F)
 #drop_df <- textreadr::read_docx("./IGHV1-18.docx")
-invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml"), verbose = FALSE))
+invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
 
 ui <- fluidPage(
 
@@ -156,7 +156,7 @@ server <- function(input, output) {
                 overwrite = TRUE, verbose = F)
       #drop_df <- textreadr::read_docx("./IGHV1-18.docx")
       
-      rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml"), verbose = F)
+      rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = F)
       output$markdown <- renderUI({
         withMathJax(includeMarkdown(knitr::knit('./IGHV1-18_docx.md', quiet = TRUE)))
     })

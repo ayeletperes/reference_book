@@ -14,7 +14,7 @@ hline <- function(y = 0, color = "red") {
 
 plot_zygousity <- function(tmp, state, allele_thresh, g){
   
-  tmp_plot <- filter(tmp, zygousity_state == state) %>% rowwise() %>% mutate(
+  tmp_plot <- dplyr::filter(tmp, zygousity_state == state) %>% dplyr::rowwise() %>% dplyr::mutate(
     v_alleles_p = v_alleles_abc,
     v_alleles_p = gsub(";", "\n", v_alleles_p),
     text = paste(
@@ -49,12 +49,12 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   
   
   tmp_plot <-
-    tmp_plot %>% arrange(loc2, v_alleles_p) %>% group_by(loc2) %>% 
-    mutate(loc_plot = loc2 + loc_jitter[[unique(loc2)]][v_alleles_p],) %>% ungroup() %>% 
-    mutate(jitter_offset = jitter(loc_plot))
+    tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
+   dplyr:: mutate(loc_plot = loc2 + loc_jitter[[unique(loc2)]][v_alleles_p],) %>% ungroup() %>% 
+    dplyr::mutate(jitter_offset = (loc_plot))
   
   tickvals_tmp <-
-    tmp_plot %>% pull(loc_plot) %>% unique() %>% sort()
+    tmp_plot %>% dplyr::pull(loc_plot) %>% unique() %>% sort()
   
   tickvals <- c()
   
@@ -64,7 +64,7 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   
   
   ticktext <-
-    tmp_plot %>% pull(v_allele_axis) %>% unique() %>% sort()
+    tmp_plot %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
   
   plotly1 <-
     tmp_plot %>% rowwise() %>% dplyr::mutate(group = paste0(project, "-", v_alleles_p)) %>%
@@ -135,12 +135,12 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
 
 data_cutoff <- function(tmp, func_groups, g, allele_thresh = 0.5, or_allele){
   tmp <- tmp %>%
-    filter(v_gene == func_groups[as.character(g)], !is.na(v_allele)) %>% 
+    dplyr:: filter(v_gene == func_groups[as.character(g)], !is.na(v_allele)) %>% 
     ungroup()
   
-  tmp <- tmp %>% group_by(subject)
+  tmp <- tmp %>% dplyr::group_by(subject)
   
-  tmp <- tmp %>% arrange(desc(freq)) %>%
+  tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
     dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
       zygousity_state = as.numeric(sum(freq > allele_thresh/100, na.rm = T)),
       v_alleles = paste0(1:unique(zygousity_state), " - ", or_allele[v_allele[1:unique(zygousity_state)]], collapse = ";"),
