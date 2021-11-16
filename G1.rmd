@@ -124,6 +124,8 @@ tagList(p_list)
 
 This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
+You can access the file also from [here](https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5)
+
 ```{r, message=F, warning=F, error=F, echo=F}
 # Authenticate and save token for later use2
 token <- drop_auth(rdstoken = "dropbox_token.rds")
