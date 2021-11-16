@@ -1,21 +1,27 @@
 ---
 title: "Functional groups"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    keep_md: yes
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
-pacman::p_load('dplyr', 'tidyr', 'gapminder', 'htmltools',
-               'ggplot2',  'ggalt', 'ggmsa',
-               'forcats', 'R.utils', 'png', 'BiocManager',
-               'grid', 'ggpubr', 'scales', 'dendextend',
-               'bbplot', 'data.table', 'dplyr', 'Biostrings', 'alakazam', "unikn", 
-               'plotly', 'ggdendro', 'msa', 'msaR', 'DT', 'DECIPHER', "RColorBrewer")
+options(repos = BiocManager::repositories())
+pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
+               'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
+               'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
+               'plotly', 'ggdendro', "RColorBrewer", install = F)
 ```
 
 ```{r}
 source("functions.R")
 ```
+
+## Sequence pre-processing
 
 Summary statistics for each of the functional groups declared in the app.
 
@@ -29,3 +35,20 @@ For P1 and P11 the following filtration criteria were applied:
 * After changing into group annotations, sequences which had more than a single assignment in naive repertoires were remove.
 
 The groups were created with similarity of 95% based on complete linkage and functional sequences and up to position 318.
+
+## Projects sequence depth
+
+```{r}
+load("data_frac_new2.rda")
+
+data <- data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`
+
+depth <- data %>% dplyr::group_by(project, subject) %>% dplyr::summarise(counts = sum(count))
+
+renderPlot({ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
+  bbplot::bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000")) +
+  theme(axis.text.x = element_text(size = 12), 
+        axis.text.y = element_text(size = 14), legend.position = "none")
+})
+```
+

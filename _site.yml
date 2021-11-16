@@ -5,7 +5,12 @@ navbar:
   left:
     - text: "Intro"
       href: index.html
-    - text: "IGHV1-18"
-      href: G1.html
-    - text: "IGHV1-2"
-      href: G2.html
+    - text: "Functional Groups"
+      menu:
+      - text: "IGHV1-18"
+        href: G1.html
+      - text: "IGHV1-2"
+        href: G2.html
+output:
+  html_document:
+    theme: yeti

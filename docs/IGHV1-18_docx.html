@@ -11,7 +11,7 @@
 
 
 
-<title>Functional groups</title>
+<title>dropbox doc</title>
 
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -28,9 +28,6 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
-<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
-<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
-<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -220,69 +217,6 @@ $(document).ready(function () {
 
 
 
-<style type="text/css">
-
-#section-TOC {
-  margin: 25px 0px 20px 0px;
-}
-@media (max-width: 768px) {
-#section-TOC {
-  position: relative;
-  width: 100%;
-}
-}
-
-@media print {
-.toc-content {
-  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
-  float: right;
-}
-}
-
-.toc-content {
-  padding-left: 30px;
-  padding-right: 40px;
-}
-
-div.main-container {
-  max-width: 1200px;
-}
-
-div.tocify {
-  width: 20%;
-  max-width: 260px;
-  max-height: 85%;
-}
-
-@media (min-width: 768px) and (max-width: 991px) {
-  div.tocify {
-    width: 25%;
-  }
-}
-
-@media (max-width: 767px) {
-  div.tocify {
-    width: 100%;
-    max-width: none;
-  }
-}
-
-.tocify ul, .tocify li {
-  line-height: 20px;
-}
-
-.tocify-subheader .tocify-item {
-  font-size: 0.90em;
-}
-
-.tocify .list-group-item {
-  border-radius: 0px;
-}
-
-
-</style>
-
-
 
 </head>
 
@@ -290,16 +224,6 @@ div.tocify {
 
 
 <div class="container-fluid main-container">
-
-
-<!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row">
-<div class="col-xs-12 col-sm-4 col-md-3">
-<div id="section-TOC" class="tocify">
-</div>
-</div>
-
-<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -342,37 +266,23 @@ div.tocify {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div id="section-header">
+<div id="header">
 
 
 
-<h1 class="title toc-ignore">Functional groups</h1>
+<h1 class="title toc-ignore">dropbox doc</h1>
 
 </div>
 
 
-<div id="section-sequence-pre-processing" class="section level2">
-<h2>Sequence pre-processing</h2>
-<p>Summary statistics for each of the functional groups declared in the app.</p>
-<p>The app includes the P1 and P11 naive datasets and the P4 non-naive dataset.</p>
-<p>For P1 and P11 the following filtration criteria were applied:</p>
 <ul>
-<li>Functional sequence, no stop codons or frame shifts.</li>
-<li>Sequences which start from position 1 of the V gene.</li>
-<li>Sequences which didn’t have gaps open (-) and didn’t include any N’s</li>
-<li>After changing into group annotations, sequences which had more than a single assignment in naive repertoires were remove.</li>
+<li><p>From the allele relative fraction plots we can see that the dominants alleles are <strong>01</strong> and <strong>04</strong>, they appear in all states.</p></li>
+<li><p>Alleles <strong>01</strong> and <strong>03</strong> are closer to each other, hence in state 3 for the threshold of 0.5\% we suspect that the sequences are mis-assigned and should be allele <strong>01</strong>. Otherwise we should have seen the allele in one of the other stated as well.</p></li>
+<li><p>Further the relations between <strong>01</strong> and <strong>04</strong> tends to heterozygosity with equal usage, thus the appearance of the lowly expressed allele in state 2 are likely erroneous.</p></li>
 </ul>
-<p>The groups were created with similarity of 95% based on complete linkage and functional sequences and up to position 318.</p>
-</div>
-<div id="section-projects-sequence-depth" class="section level2">
-<h2>Projects sequence depth</h2>
-<p><div id="outbc49333f373160df" class="shiny-plot-output" style="width:100%;height:400px;"></div></p>
-</div>
 
 
 
-</div>
-</div>
 
 </div>
 
@@ -393,7 +303,7 @@ $(document).ready(function () {
 
 <script>
 $(document).ready(function () {
-  window.buildTabsets("section-TOC");
+  window.buildTabsets("TOC");
 });
 
 $(document).ready(function () {
@@ -405,35 +315,6 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
-<script>
-$(document).ready(function ()  {
-
-    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
-    $('.unlisted.unnumbered').addClass('toc-ignore')
-
-    // move toc-ignore selectors from section div to header
-    $('div.section.toc-ignore')
-        .removeClass('toc-ignore')
-        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
-
-    // establish options
-    var options = {
-      selectors: "h1,h2,h3",
-      theme: "bootstrap3",
-      context: '.toc-content',
-      hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
-      },
-      ignoreSelector: ".toc-ignore",
-      scrollTo: 0
-    };
-    options.showAndHide = true;
-    options.smoothScroll = true;
-
-    // tocify
-    var toc = $("#section-TOC").tocify(options).data("toc-tocify");
-});
-</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
