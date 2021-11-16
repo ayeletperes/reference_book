@@ -127,58 +127,59 @@ This section is editable by clicking on the edit button below. To refresh the se
 You can access the file also from [here](https://www.dropbox.com/scl/fi/crphl3u49fmkw8wnb5v71/IGHV1-2.docx?dl=0&rlkey=l54oqhrlxx8wyp6bywr224sx0)
 
 ```{r, message=F, echo=F, warning=F}
-# Authenticate and save token for later use2
-token <- drop_auth(rdstoken = "dropbox_token.rds")
-
-# Retrieveing your file is as simple as
-drop_download("public/conclusions/IGHV1-2.docx", local_path = "docs/IGHV1-2.docx",
-              overwrite = TRUE, verbose = FALSE, progress = FALSE)
-drop_df <- textreadr::read_docx("docs/IGHV1-2.docx")
-invisible(rmarkdown::pandoc_convert(input = "IGHV1-2.docx", to = "markdown", output = "IGHV1-2_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), wd = "docs", verbose = FALSE))
-
-ui <- fluidPage(
-
-    # Application title
-    mainPanel(
-      shiny::actionButton(inputId='ab1', label="Edit text", 
-                          icon = icon("edit"), 
-                          onclick ="window.open('https://www.dropbox.com/scl/fi/crphl3u49fmkw8wnb5v71/IGHV1-2.docx?dl=0&rlkey=l54oqhrlxx8wyp6bywr224sx0')"),
-      
-      shiny::actionButton(inputId='ab2', label="Reload text", 
-                          icon = icon("sync-alt")),
-      
-      #htmlOutput("df_output"),
-      uiOutput('markdown')
-    )
-)
-
-server <- function(input, output) {
-    
-  observeEvent(input$ab2, {
-    drop_download("public/conclusions/IGHV1-2.docx", local_path = "docs/IGHV1-2.docx",
-              overwrite = TRUE, verbose = F)
-    #drop_df <- textreadr::read_docx("docs/IGHV1-2.docx")
-    
-    rmarkdown::pandoc_convert(input = "IGHV1-2.docx", to = "markdown", output = "IGHV1-2_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), wd = "docs", verbose = F)
-    output$markdown <- renderUI({
-      #withMathJax(includeMarkdown(knitr::knit('IGHV1-2_docx.md', quiet = TRUE)))
-    HTML(markdown::markdownToHTML(knitr::knit('docs/IGHV1-2_docx.md', quiet = TRUE)))
-  })
-    
-  })
-    
-  # output$df_output <- renderUI({
-  #       if(input$ab2) return()
-  #       HTML(paste(drop_df, collapse = "<br/><br/>"))
-  #   })
-  
-  output$markdown <- renderUI({
-    #withMathJax(includeMarkdown(knitr::knit('docs/IGHV1-2_docx.md', quiet = TRUE)))
-    HTML(markdown::markdownToHTML(knitr::knit('docs/IGHV1-2_docx.md', quiet = TRUE)))
-  })
-}
-
-shinyApp(ui = ui, server = server)
+knitr::include_url("https://peresay.shinyapps.io/G2_group/?group=IGHV1-2")
+# # Authenticate and save token for later use2
+# token <- drop_auth(rdstoken = "dropbox_token.rds")
+# 
+# # Retrieveing your file is as simple as
+# drop_download("public/conclusions/IGHV1-2.docx", local_path = "docs/IGHV1-2.docx",
+#               overwrite = TRUE, verbose = FALSE, progress = FALSE)
+# drop_df <- textreadr::read_docx("docs/IGHV1-2.docx")
+# invisible(rmarkdown::pandoc_convert(input = "IGHV1-2.docx", to = "markdown", output = "IGHV1-2_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), wd = "docs", verbose = FALSE))
+# 
+# ui <- fluidPage(
+# 
+#     # Application title
+#     mainPanel(
+#       shiny::actionButton(inputId='ab1', label="Edit text", 
+#                           icon = icon("edit"), 
+#                           onclick ="window.open('https://www.dropbox.com/scl/fi/crphl3u49fmkw8wnb5v71/IGHV1-2.docx?dl=0&rlkey=l54oqhrlxx8wyp6bywr224sx0')"),
+#       
+#       shiny::actionButton(inputId='ab2', label="Reload text", 
+#                           icon = icon("sync-alt")),
+#       
+#       #htmlOutput("df_output"),
+#       uiOutput('markdown')
+#     )
+# )
+# 
+# server <- function(input, output) {
+#     
+#   observeEvent(input$ab2, {
+#     drop_download("public/conclusions/IGHV1-2.docx", local_path = "docs/IGHV1-2.docx",
+#               overwrite = TRUE, verbose = F)
+#     #drop_df <- textreadr::read_docx("docs/IGHV1-2.docx")
+#     
+#     rmarkdown::pandoc_convert(input = "IGHV1-2.docx", to = "markdown", output = "IGHV1-2_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), wd = "docs", verbose = F)
+#     output$markdown <- renderUI({
+#       #withMathJax(includeMarkdown(knitr::knit('IGHV1-2_docx.md', quiet = TRUE)))
+#     HTML(markdown::markdownToHTML(knitr::knit('docs/IGHV1-2_docx.md', quiet = TRUE)))
+#   })
+#     
+#   })
+#     
+#   # output$df_output <- renderUI({
+#   #       if(input$ab2) return()
+#   #       HTML(paste(drop_df, collapse = "<br/><br/>"))
+#   #   })
+#   
+#   output$markdown <- renderUI({
+#     #withMathJax(includeMarkdown(knitr::knit('docs/IGHV1-2_docx.md', quiet = TRUE)))
+#     HTML(markdown::markdownToHTML(knitr::knit('docs/IGHV1-2_docx.md', quiet = TRUE)))
+#   })
+# }
+# 
+# shinyApp(ui = ui, server = server)
 
 ```
 

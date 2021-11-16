@@ -1,0 +1,13 @@
+name: G2_group
+title: G2_group
+username:
+account: peresay
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5134793
+bundleId: 5257470
+url: https://peresay.shinyapps.io/G2_group/
+when: 1637058364.91333
+lastSyncTime: 1637058364.91337
+asMultiple: FALSE
+asStatic: FALSE
