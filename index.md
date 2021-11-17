@@ -16,7 +16,7 @@ d-article {
   }
 #TOC {
   position: fixed;
-  z-index: 50;
+  z-index: 20;
   background: #ebebeb;     /* or   background: white; */
   padding: 10px;           /* optional */
   border-radius: 5px;      /* optional */

@@ -1,10 +1,10 @@
 ## functions
 
-hline <- function(y = 0, color = "red") {
+hline <- function(y = 0, color = "red", x0 = 0, x1 = 1) {
   list(
     type = "line",
-    x0 = 0,
-    x1 = 1,
+    x0 = x0,
+    x1 = x1,
     xref = "paper",
     y0 = y,
     y1 = y,
@@ -33,26 +33,28 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
     )
   ) %>% ungroup()
   
+  
   loc2 <-
     setNames(1:length(unique(tmp_plot$v_allele_axis)), sort(unique(tmp_plot$v_allele_axis)))
   
   tmp_plot$loc2 <- loc2[tmp_plot$v_allele_axis]
   
   if(state!=1 & length(unique(tmp_plot$v_alleles_p))!=1){
-  loc_jitter <- c()
-  for(ii in unique(tmp_plot$loc2)){
-    loc_jitter[[ii]] <-
-      seq(0, 0.5, length.out = length(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==ii])))
+    loc_jitter <- list()
+    for(ii in 1:length(unique(tmp_plot$loc2))){
+      loc_c <- as.character(unique(tmp_plot$loc2)[ii])
+      loc_jitter[[loc_c]] <-
+        seq(0, 0.5, length.out = length(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==unique(tmp_plot$loc2)[ii]])))
+      
+      loc_jitter[[loc_c]]  <-
+        setNames(loc_jitter[[loc_c]] , sort(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==unique(tmp_plot$loc2)[ii]])))
+    }
     
-    loc_jitter[[ii]]  <-
-      setNames(loc_jitter[[ii]] , sort(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==ii])))
-  }
-  
-  
-  tmp_plot <-
-    tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
-   dplyr:: mutate(loc_plot = loc2 + loc_jitter[[unique(loc2)]][v_alleles_p],) %>% ungroup() %>% 
-    dplyr::mutate(jitter_offset = (loc_plot))
+    
+    tmp_plot <-
+      tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
+      dplyr:: mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p],) %>% ungroup() %>% 
+      dplyr::mutate(jitter_offset = jitter(loc_plot))
   }else{
     tmp_plot <-
       tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
@@ -140,9 +142,9 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   return(plotly1)
 }
 
-data_cutoff <- function(tmp, func_groups, g, allele_thresh = 0.5, or_allele){
+data_cutoff <- function(tmp, func_groups, group, allele_thresh = 0.5, or_allele){
   tmp <- tmp %>%
-    dplyr:: filter(v_gene == func_groups[as.character(g)], !is.na(v_allele)) %>% 
+    dplyr:: filter(v_gene == func_groups[as.character(group)], !is.na(v_allele)) %>% 
     ungroup()
   
   tmp <- tmp %>% dplyr::group_by(subject)
@@ -160,11 +162,173 @@ data_cutoff <- function(tmp, func_groups, g, allele_thresh = 0.5, or_allele){
 }
 
 
+data_cutoff_allele_thresh <- function(tmp, func_groups, group, allele_thresh = c("01" = 0.5), or_allele){
+  tmp <- tmp %>%
+    dplyr:: filter(v_gene == func_groups[as.character(group)], !is.na(v_allele)) %>% 
+    ungroup()
+  
+  tmp <- tmp %>% dplyr::group_by(subject)
+  
+  tmp <- tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >= allele_thresh[v_allele]/100)
+  
+  
+  tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
+    dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
+      zygousity_state = as.numeric(length(unique(v_allele))),
+      v_alleles = paste0(1:unique(zygousity_state), " - ", or_allele[v_allele[1:unique(zygousity_state)]], collapse = ";"),
+      v_alleles_abc = paste0(sort(or_allele[v_allele[1:unique(zygousity_state)]]), collapse = ";"),
+      v_allele_axis = or_allele[v_allele]
+    ) %>% arrange(subject)
+  tmp <- tmp %>% dplyr::group_by(subject, zygousity_state) %>% 
+    dplyr::mutate(loc_state = loc <= zygousity_state) %>% filter(loc_state) %>% ungroup()
+  
+  return(tmp)
+}
+
+
+plot_zygousity_allele_thresh <- function(tmp, state, allele_thresh, g){
+  
+  tmp_plot <- dplyr::filter(tmp, zygousity_state == state) %>% dplyr::rowwise() %>% dplyr::mutate(
+    v_alleles_p = v_alleles_abc,
+    v_alleles_p = gsub(";", "\n", v_alleles_p),
+    text = paste(
+      '</br>Project: ',
+      project,
+      '</br>Subject: ',
+      subject,
+      '</br>Alleles: ',
+      v_alleles,
+      '</br># assignments: ',
+      count,
+      '</br>Relative freq.: ',
+      round(freq, 4),
+      '</br>Relative Rep. freq.: ',
+      round(freq2, 4)
+    )
+  ) %>% ungroup()
+  
+  
+  
+  loc2 <-
+    setNames(1:length(unique(tmp_plot$v_allele_axis)), sort(unique(tmp_plot$v_allele_axis)))
+  
+  allele_thresh <- allele_thresh[names(allele_thresh) %in% names(loc2)]
+  
+  tmp_plot$loc2 <- loc2[tmp_plot$v_allele_axis]
+  
+  if(state!=1 & length(unique(tmp_plot$v_alleles_p))!=1){
+    loc_jitter <- list()
+    for(ii in 1:length(unique(tmp_plot$loc2))){
+      loc_c <- as.character(unique(tmp_plot$loc2)[ii])
+      loc_jitter[[loc_c]] <-
+        seq(0, 0.5, length.out = length(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==unique(tmp_plot$loc2)[ii]])))
+      
+      loc_jitter[[loc_c]]  <-
+        setNames(loc_jitter[[loc_c]] , sort(unique(tmp_plot$v_alleles_p[tmp_plot$loc2==unique(tmp_plot$loc2)[ii]])))
+    }
+    
+    
+    tmp_plot <-
+      tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
+      dplyr:: mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p],) %>% ungroup() %>% 
+      dplyr::mutate(jitter_offset = jitter(loc_plot))
+  }else{
+    tmp_plot <-
+      tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
+      dplyr:: mutate(loc_plot = loc2,) %>% ungroup() %>% 
+      dplyr::mutate(jitter_offset = (loc_plot))
+  }
+  
+  tickvals_tmp <-
+    tmp_plot %>% dplyr::pull(loc_plot) %>% unique() %>% sort()
+  
+  tickvals <- c()
+  
+  for (i in 1:length(loc2)) {
+    tickvals <- c(tickvals, mean(tickvals_tmp[floor(tickvals_tmp) == i]))
+  }
+  
+  
+  ticktext <-
+    tmp_plot %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
+  
+  cols <- setNames(rev(c("#FAAB18", "#1380A1","#990000", "#588300")),as.character(unique(allele_thresh)))
+  
+  plotly1 <-
+    tmp_plot %>% rowwise() %>% dplyr::mutate(group = paste0(project, "-", v_alleles_p)) %>%
+    highlight_key(., ~ subject) %>%
+    plot_ly() %>%
+    add_trace(
+      type = "scatter",
+      x = ~ (jitter_offset),
+      y = ~ freq,
+      text = ~ text,
+      symbol = ~ project,
+      mode = 'markers',
+      marker = list(color = "grey", size = 12),
+      showlegend = TRUE,
+      opacity = 0.9,
+      hoverinfo = 'none',
+      legendgroup = ~ project
+    ) %>%
+    add_trace(
+      type = "scatter",
+      x = ~ (jitter_offset),
+      y = ~ freq,
+      text = ~ text,
+      color = ~ v_alleles_p,
+      mode = 'markers',
+      showlegend = FALSE,
+      opacity = 0.8,
+      hoverinfo = 'text',
+      legendgroup = ~ v_alleles_p
+    ) %>%
+    add_trace(
+      x = ~ as.numeric(loc_plot),
+      y = ~ freq,
+      color = ~ v_alleles_p,
+      type = "box",
+      hoverinfo = "none",
+      fillcolor = "transparent",
+      name = ~ v_alleles_p,
+      legendgroup = ~ v_alleles_p
+    ) %>%
+    layout(
+      hovermode = 'closest',
+      shapes = lapply(1:length(names(allele_thresh)), function(ia){a = names(allele_thresh)[ia]; xx = seq(0,1,length.out = length(allele_thresh)+1); hline(unname(allele_thresh[a])/100, x0 = xx[ia], x1 = ia*(1/length(allele_thresh)), color = cols[as.character(allele_thresh[a])])}),
+      legend = list(
+        tracegroupgap = 20,
+        title = list(text =
+                       '<b>  </b>'),
+        orientation = "V"
+      ),
+      xaxis = list(
+        title = paste0(g, " Alleles"),
+        autotick = F,
+        tickmode = "array",
+        tickvals = tickvals,
+        ticktext = ticktext
+      ),
+      yaxis = list(title = "Relative allele frequency",
+                   range = c(0,1.05))
+    )  %>% plotly::highlight(
+      on = "plotly_click",
+      selected = attrs_selected(showlegend = FALSE),
+      opacityDim = 0.3,
+      persistent = TRUE
+    ) %>% plotly_build()
+  
+  return(plotly1)
+}
+
+
 seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   alleles <- allele_db %>% dplyr::filter(new_allele %in% v_calls) %>% dplyr::pull(or_allele)
   new_alleles <- setNames(allele_db %>% filter(new_allele %in% v_calls) %>% dplyr::pull(new_allele), alleles)
   sequences <- substr(vgerms[[chain]][alleles],1,318)
   names(sequences) <- new_alleles[names(sequences)]
+  
+  sequences <- sapply(sequences, function(seq) ifelse(nchar(seq)<318, paste0(seq,paste0(rep(".",318-nchar(seq)), collapse = ""), collapse = ""), seq) )
   
   mat_sub <- mat[alleles,alleles]
   
