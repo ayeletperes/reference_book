@@ -16,7 +16,7 @@ d-article {
   }
 #TOC {
   position: fixed;
-  z-index: 50;
+  z-index: 20;
   background: #ebebeb;     /* or   background: white; */
   padding: 10px;           /* optional */
   border-radius: 5px;      /* optional */
@@ -33,7 +33,7 @@ d-article {
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
 options(repos = BiocManager::repositories())
-pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
+pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot', 'scales',
                'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
                'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
                'plotly', 'ggdendro', "RColorBrewer", install = F)
@@ -69,8 +69,9 @@ depth <- data %>% dplyr::group_by(project, subject) %>% dplyr::summarise(counts 
 
 ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
   bbplot::bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000")) +
-  theme(axis.text.x = element_text(size = 12), 
-        axis.text.y = element_text(size = 14), legend.position = "none")
+  theme(axis.text.x = element_text(size = 12, angle = 90), 
+        axis.text.y = element_text(size = 14), legend.position = "none") #+
+  	#scale_x_continuous(labels = scales::label_number(suffix = " K", scale = 1e-5)) # millions
 
 ```
 

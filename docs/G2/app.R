@@ -15,9 +15,8 @@ token <- drop_auth(rdstoken = "dropbox_token.rds")
 
 # Retrieveing your file is as simple as
 
-edit_links <- c("https://www.dropbox.com/scl/fi/crphl3u49fmkw8wnb5v71/IGHV1-2.docx?dl=0&rlkey=l54oqhrlxx8wyp6bywr224sx0",
-                "https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5")
-
+edit_links <- readLines("edit_links.txt")
+share_links <- readLines("share_links.txt")
 ui <- fluidPage(
     
     # Application title
@@ -40,13 +39,13 @@ server <- function(input, output, session) {
             onclick <- edit_links[grep(group,edit_links)]
             output$ab1_out <- renderUI({shiny::actionButton(inputId='ab1', label="Edit text", 
                                          icon = icon("edit"), 
-                                         onclick =paste0("window.open(",onclick,")"))})
+                                         onclick =paste0("window.open('",onclick,"')"))})
         }else{
-            group <- "IGHV1-2"
+            group <- "IGHV1-2G2"
             onclick <- edit_links[grep(group,edit_links)]
             output$ab1_out <- renderUI({shiny::actionButton(inputId='ab1', label="Edit text", 
                                                             icon = icon("edit"), 
-                                                            onclick =paste0("window.open(",onclick,")"))})
+                                                            onclick =paste0("window.open('",onclick,"')"))})
         }
     
         observeEvent(input$ab2, {

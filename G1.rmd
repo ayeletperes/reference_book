@@ -15,7 +15,7 @@ d-article {
   }
 #TOC {
   position: fixed;
-  z-index: 50;
+  z-index: 20;
   background: #ebebeb;     /* or   background: white; */
   padding: 10px;           /* optional */
   border-radius: 5px;      /* optional */
@@ -64,24 +64,27 @@ cols <- c("#FAAB18", "#1380A1","#990000", "#588300")
 pal <- cols %>% 
   newpal(names = c("orangy", "bluish", "redish", "greeny"))
 
+edit_links <- readLines("edit_links.txt")
+share_links <- readLines("share_links.txt")
 ```
 
 
 ```{r,echo=FALSE}
-g = "IGHV1-18"
-gr <- allele_db %>% filter(gene == g) %>% pull(group) %>% unique()
-g_group <- allele_db %>% filter(gene == g) %>% pull(gene_group) %>% unique()
+g_group = "IGHV1-18G1"
+group = names(func_groups)[func_groups==g_group]
+gr <- allele_db %>% filter(gene_group == g_group) %>% pull(group) %>% unique()
+g <- allele_db %>% filter(gene_group == g_group) %>% pull(gene) %>% unique()
 ```
 
 ## Allele appearnce 
 
-The group of IGHV1-18 includes `r sum(grepl(paste0(g,"[*]"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]"), func$allele)])` out of the alleles are functional.
+The group of `r group` includes `r sum(grepl(paste0(g,"[*]", collapse = "|"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]", collapse = "|"), func$allele)])` out of the alleles are functional.
 
-For each allele we counted the number of appearances across the population, any appearance was considered valid. # no cutoff applied
+For each allele we counted the number of appearances across the population, any appearance was considered valid. 
 
 ```{r}
 ggplot(data[grepl(g_group,v_gene)], aes(v_allele, fill = v_allele)) + geom_bar() + facet_grid(.~project) + labs(x = "allele", y = "# Individuals", fill = "") + 
-  bbplot::bbc_style() + scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000")) + theme(legend.position = "none")
+  bbplot::bbc_style()  + theme(legend.position = "none") + scale_fill_manual(values = pal %>% usecol(n = 10))
 ```
 
 ## Group alignment
@@ -95,14 +98,14 @@ seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 
 ## Sequence depth
 
-To examine the potential cutoff we observed the sequence depth for each allele # fix jitter
+To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-ggplot(data[grepl(g_group,v_gene)], aes(factor(v_allele), count, color = project)) + 
-  geom_boxplot(outlier.shape=NA)+
+ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + 
+  geom_boxplot(outlier.shape=NA) +
   geom_point(position=position_jitterdodge(jitter.width = 0.1)) + 
   labs(x = "allele", y = "# Sequences", color = "") + 
-  bbplot::bbc_style() + scale_color_manual(values = c("#1380A1", "#FAAB18", "#990000"))
+  bbplot::bbc_style() + scale_color_manual(values = pal %>% usecol(n = 10))
 ```
 
 ## 0.5% cutoff 
@@ -113,19 +116,19 @@ We set an initial cutoff of $0.5\%$ to determine the potential genotype priors. 
 ```{r}
 
 tmp_allele_db <-
-  allele_db %>% filter(grepl(func_groups[as.character(g)], new_allele)) %>%
+  allele_db %>% dplyr::filter(grepl(as.character(g_group), new_allele)) %>%
   dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
 
 or_allele <-
   setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
-    paste0(func_groups[as.character(g)], "[*]"),
+    paste0(g_group, "[*]"),
     "",
     tmp_allele_db$new_allele
   )))
 
 allele_thresh = 0.5
 
-tmp <- data_cutoff(data, func_groups, g, allele_thresh, or_allele)
+tmp <- data_cutoff(data, func_groups, group, allele_thresh, or_allele)
 
 ```
 
@@ -134,7 +137,7 @@ With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(
 ```{r, warning = F, error=F, message = F}
 p_list <- c()
 for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::pull(zygousity_state)))){
-  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
+  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g_group) %>% config(edits = list(shapePosition = TRUE),
                     scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
   #
 }
@@ -146,10 +149,10 @@ tagList(p_list)
 
 This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-You can access the file also from [here](https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5)
+You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`)
 
-```{r, message=F, warning=F, error=F, echo=F}
-knitr::include_url("https://peresay.shinyapps.io/G2_group/?group=IGHV1-18")
+```{r, message=F, echo=F, warning=F}
+knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group))
 # Authenticate and save token for later use2
 # token <- drop_auth(rdstoken = "dropbox_token.rds")
 # 
@@ -203,7 +206,7 @@ From the results we belive that the cutoff for this group should be closer to $1
 
 ```{r}
 
-tableData <- data_cutoff(data, func_groups, g, 12.5, or_allele) %>% dplyr::group_by(zygousity_state, v_alleles_abc, v_allele) %>% dplyr::summarise(mean_freq = IQR(freq)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(round(mean_freq, 3), collapse = ";"))
+tableData <- data_cutoff(data, func_groups, g, 12.5, or_allele) %>% dplyr::group_by(zygousity_state, v_allele) %>% dplyr::summarise(mean_freq = paste0(round(quantile(freq, 3/4),3),":", round(quantile(freq, 1/4),3)), v_alleles_abc = unique(v_alleles_abc)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(mean_freq, collapse = ";"))
 
 DT::datatable(
         tableData,
@@ -212,9 +215,10 @@ DT::datatable(
         colnames = c(
           "Zygousity state" = "zygousity_state",
           "V\nallele" = "v_alleles_abc",
-          "IQR fraction" = "fractions"
+          "IQR range" = "fractions"
         )
       )
+
 
 # column names change to Zygousity state, alleles combinations, IQR 
 
@@ -241,20 +245,6 @@ allele_thresh = 12.5
 tmp <- data_cutoff(data, func_groups, g, allele_thresh, or_allele)
 
 ```
-
-```{r, echo=FALSE}
-# Get the current figure size in pixels:
-get_w <- function() {
-  with(knitr::opts_current$get(c("fig.width", "dpi", "fig.retina")),
-       fig.width*dpi/fig.retina)
-}
-
-get_h <- function() {
-  with(knitr::opts_current$get(c("fig.height", "dpi", "fig.retina")),
-       fig.height*dpi/fig.retina)
-}
-```
-
 
 ```{r, warning = F, error=F, message = F}
 p_list <- c()
