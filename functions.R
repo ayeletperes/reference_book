@@ -335,19 +335,25 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   colnames(mat_sub) <-  gsub(paste0(g_group,"[*]"),"",new_alleles[colnames(mat_sub)])
   rownames(mat_sub) <-  gsub(paste0(g_group,"[*]"),"",new_alleles[rownames(mat_sub)])
   
+  matrix_sequences <- as.data.frame(sapply(sequences,seqinr::s2c), stringsAsFactors = F)
+  
+  nucs <- nrow(matrix_sequences)-sum(apply(matrix_sequences, 1, function(x) all(x==".")))
+  
   hc <- hclust(as.dist(mat_sub), method = "complete")
   dend <- as.dendrogram(hc)
-  dend <- dendextend::set(dend, "labels_cex", 1.2)
+  dend <- dendextend::set(dend, "labels_cex", 2)
   ggd1 <- as.ggdend(dend)
   p_dend <- ggplot(ggd1, theme = bbplot::bbc_style())  + theme(
     axis.line = element_blank(), axis.title.x = element_blank(),
     axis.ticks.x = element_blank(), axis.text.x = element_blank(),
+    axis.text.y = element_text(size = 24), axis.title.y = element_text(size = 24),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
     panel.border = element_blank(), panel.background = element_blank(), 
-    legend.position = "none" )
+    legend.position = "none" ) + scale_y_continuous(sec.axis = sec_axis(~.*nucs, name = "Mutations")) +
+    ylab("Ratio")
   
   
-  matrix_sequences <- as.data.frame(sapply(sequences,seqinr::s2c), stringsAsFactors = F)
+  
   matrix_sequences$annot <- apply(matrix_sequences, 1, function(x) length(unique(x)) != 1) 
   matrix_sequences$pos <- 1:318
   matrix_sequences_plot <- reshape2::melt(matrix_sequences, id.vars = c("pos","annot"))
@@ -357,52 +363,174 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   matrix_sequences_plot$value[matrix_sequences_plot$value=="."] <- NA
   matrix_sequences_plot$annot_text <- sapply(1:nrow(matrix_sequences_plot), function(i) ifelse(matrix_sequences_plot$annot[i],matrix_sequences_plot$value[i],""))
   
-  p1 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id<=80, ], aes(x=(pos), y=(allele))) + 
-    geom_tile(aes(fill=value),colour="white") + 
-    geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(1, 80)) + bbplot::bbc_style()  +
-    scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
-      axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
-      axis.ticks.y = element_blank(),
-      panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-      panel.border = element_blank(), panel.background = element_blank(), 
-      legend.position = "none" )
+  plot_align <- function(data, low_bound = 1, upper_boud = 80){
+    
+    
+    ggplot(data[data$id>=low_bound & data$id<upper_boud, ], aes(x=(pos), y=(allele))) + 
+      geom_tile(aes(fill=value),colour="white") + 
+      geom_text(aes(label = annot_text), color = "black") +
+      coord_equal(expand = F, xlim = c(low_bound, upper_boud), ratio = 9/5, clip = "off") + 
+      bbplot::bbc_style() + 
+      scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme_align
+    
+  }
   
-  p2 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>80 & matrix_sequences_plot$id <=160, ], aes(x=(pos), y=(allele))) + 
-    geom_tile(aes(fill=value),colour="white") + 
-    geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(81, 160)) + bbplot::bbc_style()  + 
-    scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
-      axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
-      axis.ticks.y = element_blank(),
-      panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-      panel.border = element_blank(), panel.background = element_blank(), 
-      legend.position = "none" ) 
-  
-  p3 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>160 & matrix_sequences_plot$id <=240, ], aes(x=(pos), y=(allele))) + 
-    geom_tile(aes(fill=value),colour="white") + 
-    geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(161, 240)) + bbplot::bbc_style()  + 
-    scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
-      axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
-      axis.ticks.y = element_blank(),
-      panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-      panel.border = element_blank(), panel.background = element_blank(), 
-      legend.position = "none" ) 
+  theme_align <- theme(
+    axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
+    axis.ticks.y = element_blank(), axis.ticks.x = element_line(), 
+    axis.text.y = element_text(size = 24), 
+    axis.text.x = element_text(size = 24, angle = 45, hjust = 0.9, vjust = 1),
+    panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+    panel.border = element_blank(), panel.background = element_blank(), 
+    legend.position = "none" )
   
   
-  p4 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>240, ], aes(x=(pos), y=(allele))) + 
-    geom_tile(aes(fill=value),colour="white") + 
-    geom_text(aes(label = annot_text), color = "black") +
-    coord_equal(expand = F, xlim = c(240, 318)) + bbplot::bbc_style()  + 
-    scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
-      axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
-      axis.ticks.y = element_blank(),
-      panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-      panel.border = element_blank(), panel.background = element_blank(), 
-      legend.position = "none" ) 
+  
+  p_list <- apply(data.frame(low_bound = seq(1, 318, by = 80),
+                             upper_bound = c(seq(81, 318, by = 80),319)),
+                  1, function(x){
+                    plot_align(matrix_sequences_plot, x[1], x[2])
+                  }
+                  )
   
   
-  cowplot::plot_grid(p_dend, p1, p2, p3, p4, nrow=5, ncol = 1, rel_heights = c(0.4, 0.15, 0.15, 0.15, 0.15))
   
+  
+  p1 <- cowplot::plot_grid(plotlist = p_list, nrow=4)
+  
+  return(cowplot::plot_grid(plotlist = list(p_dend, p1), nrow = 2, rel_heights = c(0.4,0.6)))
+  # p1 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id<=80, ], aes(x=(pos), y=(allele))) + 
+  #   geom_tile(aes(fill=value),colour="white") + 
+  #   geom_text(aes(label = annot_text), color = "black") +
+  #   coord_equal(expand = F, xlim = c(1, 80)) + bbplot::bbc_style() + theme_align
+  # 
+  # p2 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>80 & matrix_sequences_plot$id <=160, ], aes(x=(pos), y=(allele))) + 
+  #   geom_tile(aes(fill=value),colour="white") + 
+  #   geom_text(aes(label = annot_text), color = "black") +
+  #   coord_equal(expand = F, xlim = c(81, 160)) + bbplot::bbc_style() + theme_align
+  # 
+  # p3 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>160 & matrix_sequences_plot$id <=240, ], aes(x=(pos), y=(allele))) + 
+  #   geom_tile(aes(fill=value),colour="white") + 
+  #   geom_text(aes(label = annot_text), color = "black") +
+  #   coord_equal(expand = F, xlim = c(161, 240)) + bbplot::bbc_style() + theme_align
+  # 
+  # 
+  # p4 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>240, ], aes(x=(pos), y=(allele))) + 
+  #   geom_tile(aes(fill=value),colour="white") + 
+  #   geom_text(aes(label = annot_text), color = "black") +
+  #   coord_equal(expand = F, xlim = c(240, 318)) + bbplot::bbc_style()  + 
+  #   scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
+  #     axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
+  #     axis.ticks.y = element_blank(),
+  #     panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+  #     panel.border = element_blank(), panel.background = element_blank(), 
+  #     legend.position = "none" ) 
+  # 
+  
+  #cowplot::plot_grid(p_dend, p1, p2, p3, p4, nrow=5, ncol = 1, rel_heights = c(0.4, 0.15, 0.15, 0.15, 0.15))
+  
+}
+
+rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, border = 2, 
+                              cluster = NULL, horiz = FALSE, density = NULL, angle = 45, 
+                              text = NULL, text_cex = 1, text_col = 1, xpd = TRUE, lower_rect, 
+                              upper_rect = 0, prop_k_height = 0.5, stop_if_out = FALSE, 
+                              ...) 
+{
+  if (!is.dendrogram(tree)) 
+    stop("x is not a dendrogram object.")
+  if (length(h) > 1L | length(k) > 1L) {
+    stop("'k' and 'h' must be a scalar(i.e.: of length 1)")
+  }
+  tree_heights <- heights_per_k.dendrogram(tree)[-1]
+  tree_order <- order.dendrogram(tree)
+  if (!is.null(h)) {
+    if (!is.null(k)) {
+      stop("specify exactly one of 'k' and 'h'")
+    }
+    ss_ks <- tree_heights < h
+    k <- min(as.numeric(names(ss_ks))[ss_ks])
+    k <- max(k, 2)
+  }
+  else if (is.null(k)) {
+    stop("specify exactly one of 'k' and 'h'")
+  }
+  if (k < 2 | k > length(tree_heights)) {
+    if (stop_if_out) {
+      stop(gettextf("k must be between 2 and %d", length(tree_heights)), 
+           domain = NA)
+    }
+    else {
+      warning(gettextf("k must be between 2 and %d", length(tree_heights)), 
+              domain = NA)
+    }
+  }
+  if (is.null(cluster)) {
+    cluster <- cutree(tree, k = k)
+  }
+  clustab <- table(cluster)[unique(cluster[tree_order])]
+  m <- c(0, cumsum(clustab))
+  if (!is.null(x)) {
+    if (!is.null(which)) {
+      stop("specify exactly one of 'which' and 'x'")
+    }
+    which <- x
+    for (n in seq_along(x)) which[n] <- max(which(m < x[n]))
+  }
+  else if (is.null(which)) {
+    which <- 1L:k
+  }
+  if (any(which > k)) {
+    stop(gettextf("all elements of 'which' must be between 1 and %d", 
+                  k), domain = NA)
+  }
+  border <- rep_len(border, length(which))
+  retval <- list()
+  old_xpd <- par()["xpd"]
+  par(xpd = xpd)
+  for (n in seq_along(which)) {
+    next_k_height <- tree_heights[names(tree_heights) == 
+                                    k + 1]
+    if (length(next_k_height) == 0) {
+      next_k_height <- 0
+      prop_k_height <- 1
+    }
+    if (!horiz) {
+      xleft <- m[which[n]] + 0.66
+      if (missing(lower_rect)) {
+        lower_rect <- -max(strheight2(labels(tree)))
+        dLeaf <- -0.75 * strheight("x")
+        extra_space <- -strheight2("_")
+        lower_rect <- lower_rect + dLeaf + extra_space
+      }
+      ybottom <- lower_rect
+      xright <- m[which[n] + 1] + 0.33
+      ytop <- tree_heights[names(tree_heights) == k] * 
+        prop_k_height + next_k_height * (1 - prop_k_height) + 
+        upper_rect
+    }
+    else {
+      ybottom <- m[which[n]] + 0.66
+      if (missing(lower_rect)) {
+        lower_rect <- min(strwidth(labels(tree)))
+        dLeaf <- 0.75 * strwidth("w")
+        extra_space <- strwidth("_")
+        lower_rect <- lower_rect + dLeaf + extra_space
+      }
+      xright <- lower_rect
+      ytop <- m[which[n] + 1] + 0.33
+      xleft <- tree_heights[names(tree_heights) == k] * 
+        prop_k_height + next_k_height * (1 - prop_k_height) + 
+        upper_rect
+    }
+    rect(xleft, ybottom, xright, ytop, border = border[n], 
+         density = density, angle = angle, ...)
+    if (!is.null(text)) {
+      text((m[which[n]] + m[which[n] + 1] + 1)/2, ytop+0.01, text[n], 
+           cex = text_cex, col = text_col)
+    }
+    retval[[n]] <- which(cluster == as.integer(names(clustab)[which[n]]))
+  }
+  par(xpd = old_xpd)
+  invisible(retval)
 }

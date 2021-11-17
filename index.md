@@ -53,10 +53,19 @@ For P1 and P11 the following filtration criteria were applied:
 
 The groups were created with similarity of 95% based on complete linkage and functional sequences and up to position 318.
 
+## Functional groups
+
+<div class="layout-chunk" data-layout="l-body">
+<img src="index_files/figure-html5/unnamed-chunk-2-1.png" width="4400" />
+
+</div>
+
+
+
 ## Projects sequence depth
 
 <div class="layout-chunk" data-layout="l-body">
-![](index_files/figure-html5/unnamed-chunk-2-1.png)<!-- -->
+![](index_files/figure-html5/unnamed-chunk-3-1.png)<!-- -->
 
 </div>
 
