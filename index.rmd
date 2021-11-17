@@ -7,29 +7,6 @@ output:
     keep_md: yes
 ---
 
-<style>
-html {
-  scroll-behavior: smooth;
-}
-d-article {
-    contain: none;
-  }
-#TOC {
-  position: fixed;
-  z-index: 20;
-  background: #ebebeb;     /* or   background: white; */
-  padding: 10px;           /* optional */
-  border-radius: 5px;      /* optional */
-  }
-
-/* Hide the ToC when resized to mobile or tablet:  480px, 768px, 900px */
-@media screen and (max-width: 900px) {
-#TOC {
-    position: relative;
-  }
-}
-</style>
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
 #options(repos = BiocManager::repositories())
@@ -60,7 +37,7 @@ The groups were created with similarity of 95% based on complete linkage and fun
 
 ## Functional groups
 
-```{r, fig.width=25, fig.height=10, out.width=4400}
+```{r, fig.asp=0.8, out.width="1000%", fig.width=20}
 load("data.rda")
 mat <- mat_list$IGH$functional$nonsingle$all$`318`
 clust <- hclust(as.dist(mat), "complete")

@@ -7,29 +7,6 @@ output:
     keep_md: yes
 ---
 
-<style>
-html {
-  scroll-behavior: smooth;
-}
-d-article {
-    contain: none;
-  }
-#TOC {
-  position: fixed;
-  z-index: 20;
-  background: #ebebeb;     /* or   background: white; */
-  padding: 10px;           /* optional */
-  border-radius: 5px;      /* optional */
-  }
-
-/* Hide the ToC when resized to mobile or tablet:  480px, 768px, 900px */
-@media screen and (max-width: 900px) {
-#TOC {
-    position: relative;
-  }
-}
-</style>
-
 
 
 <div class="layout-chunk" data-layout="l-body">
@@ -56,7 +33,7 @@ The groups were created with similarity of 95% based on complete linkage and fun
 ## Functional groups
 
 <div class="layout-chunk" data-layout="l-body">
-<img src="index_files/figure-html5/unnamed-chunk-2-1.png" width="4400" />
+<img src="index_files/figure-html5/unnamed-chunk-2-1.png" width="1000%" />
 
 </div>
 

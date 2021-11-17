@@ -6,29 +6,6 @@ output:
     toc_float: true
 ---
 
-<style>
-html {
-  scroll-behavior: smooth;
-}
-d-article {
-    contain: none;
-  }
-#TOC {
-  position: fixed;
-  z-index: 20;
-  background: #ebebeb;     /* or   background: white; */
-  padding: 10px;           /* optional */
-  border-radius: 5px;      /* optional */
-  }
-
-/* Hide the ToC when resized to mobile or tablet:  480px, 768px, 900px */
-@media screen and (max-width: 900px) {
-#TOC {
-    position: relative;
-  }
-}
-</style>
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
 options(repos = BiocManager::repositories())
