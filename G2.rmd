@@ -6,10 +6,8 @@ output:
     toc_float: false
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
-#options(repos = BiocManager::repositories())
 pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
                'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
                'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
@@ -60,8 +58,7 @@ The group of `r group` includes `r sum(grepl(paste0(g,"[*]", collapse = "|"), fu
 For each allele we counted the number of appearances across the population, any appearance was considered valid. 
 
 ```{r}
-ggplot(data[grepl(g_group,v_gene)], aes(v_allele, fill = v_allele)) + geom_bar() + facet_grid(.~project) + labs(x = "allele", y = "# Individuals", fill = "") + 
-  bbplot::bbc_style()  + theme(legend.position = "none") + scale_fill_manual(values = pal %>% usecol(n = 10))
+allele_appearance(data, g_group)
 ```
 
 ## Group alignment
@@ -78,11 +75,7 @@ seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-ggplot(data[grepl(g_group,v_gene)], aes(v_allele, count, color = project)) + 
-  geom_boxplot(outlier.shape=NA) +
-  geom_point(position=position_jitterdodge(jitter.width = 0.1)) + 
-  labs(x = "allele", y = "# Sequences", color = "") + 
-  bbplot::bbc_style() + scale_color_manual(values = pal %>% usecol(n = 10))
+sequence_depth(data, g_group)
 ```
 
 ## 0.5% cutoff 
@@ -105,7 +98,7 @@ or_allele <-
 
 allele_thresh = 0.5
 
-tmp <- data_cutoff(data, func_groups, group, allele_thresh, or_allele)
+tmp <- data_cutoff(data, func_g_groups, g_group, allele_thresh, or_allele)
 
 ```
 
@@ -206,7 +199,7 @@ or_allele <-
 allele_thresh = setNames(rep(2,length(names(or_allele))),names(or_allele))
 allele_thresh[5]<-0.5
 
-tmp <- data_cutoff_allele_thresh(data, func_groups, g, allele_thresh, or_allele)
+tmp <- data_cutoff_allele_thresh(data, func_groups, g_group, allele_thresh, or_allele)
 
 ```
 
@@ -262,7 +255,7 @@ or_allele <-
 allele_thresh = setNames(rep(5,length(names(or_allele))),names(or_allele))
 allele_thresh[5]<-0.5
 
-tmp <- data_cutoff_allele_thresh(data, func_groups, g, allele_thresh, or_allele)
+tmp <- data_cutoff_allele_thresh(data, func_groups, g_group, allele_thresh, or_allele)
 
 ```
 

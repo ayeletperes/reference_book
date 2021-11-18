@@ -1,5 +1,76 @@
 ## functions
 
+
+allele_appearance <- function(data_, g_group){
+  n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
+  data_ <- data_[grepl(g_group,v_gene)]
+  data_[,v_alleles2:=paste0("*",v_allele)]
+  ggplot(data_, aes(v_alleles2, fill = v_alleles2)) + 
+    geom_bar() + facet_grid(.~project) + 
+    labs(x = "allele", y = "# Individuals", fill = "") + 
+    bbplot::bbc_style()  + theme(legend.position = "right", 
+                                 axis.text.x = element_text(size = 14, angle = 90, vjust = 0.5, hjust = 1)) + 
+    scale_fill_manual(values = pal %>% usecol(n = n_alleles))
+  
+}
+
+sequence_depth <- function(data_, g_group){
+  
+  n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
+  data_ <- data_[grepl(g_group,v_gene)]
+  data_[,v_alleles2:=paste0("*",v_allele)]
+  data_[,text:=paste(
+    '</br>Project: ',
+    project,
+    '</br>Subject: ',
+    subject,
+    '</br>Alleles: ',
+    v_allele,
+    '</br># assignments: ',
+    count,
+    '</br>Relative freq.: ',
+    round(freq, 4),
+    '</br>Relative Rep. freq.: ',
+    round(freq2, 4)
+  )]
+  
+  colors <- pal %>% usecol(n = n_alleles)
+  colors <- setNames(colors[1:length(unique(data_$project))],unique(data_$project))
+  p_list <- lapply(unique(data_$project),function(p){
+    g1 <- ggplot(data_[project==p], aes(v_alleles2, count, text = text)) + 
+      geom_boxplot(outlier.shape=NA, color = colors[p]) +
+      geom_point(position=position_jitter(width = 0.1), color = colors[p]) + 
+      labs(x = "allele", y = "# Sequences", color = "") + 
+      bbplot::bbc_style() + scale_color_manual(values = pal %>% usecol(n = n_alleles)) +
+      theme(axis.text.x = element_text(size = 14, angle = 90, vjust = 0.5, hjust = 1))
+    
+    g1 <- ggplotly(g1, tooltip = "text") %>%
+      add_annotations(
+        text = p,
+        x = 0.5,
+        y = 1.1,
+        yref = "paper",
+        xref = "paper",
+        xanchor = "middle",
+        yanchor = "top",
+        showarrow = FALSE,
+        font = list(size = 15)
+      )
+    
+    g1$x$data <- lapply(g1$x$data, FUN = function(x){
+      if(x$marker$line$color=="rgba(0,0,0,1)") x$marker = list(opacity = 0)
+      return(x)
+    })
+    
+    return(g1)
+  })
+  
+  subplot(p_list, nrows = length(colors), 
+          shareY = F, titleX = T, 
+          titleY = T, shareX = F, margin = 0.07)
+}
+
+
 hline <- function(y = 0, color = "red", x0 = 0, x1 = 1) {
   list(
     type = "line",
@@ -53,13 +124,14 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
     
     tmp_plot <-
       tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
-      dplyr:: mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p],) %>% ungroup() %>% 
-      dplyr::mutate(jitter_offset = jitter(loc_plot))
+      dplyr:: mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p],) %>% ungroup()
+    
+      if(length(tmp_plot$loc_plot)) tmp_plot <- tmp_plot %>% dplyr::mutate(jitter_offset = jitter(loc_plot))
   }else{
     tmp_plot <-
       tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
-      dplyr:: mutate(loc_plot = loc2,) %>% ungroup() %>% 
-      dplyr::mutate(jitter_offset = (loc_plot))
+      dplyr:: mutate(loc_plot = loc2,) %>% ungroup()
+    if(length(tmp_plot$loc_plot)) tmp_plot <- tmp_plot %>% dplyr::mutate(jitter_offset = jitter(loc_plot))
   }
   
   tickvals_tmp <-
@@ -142,9 +214,10 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   return(plotly1)
 }
 
-data_cutoff <- function(tmp, func_groups, group, allele_thresh = 0.5, or_allele){
+data_cutoff <- function(tmp, func_groups, g_group, allele_thresh = 0.5, or_allele){
+  v_gene_cut <- ifelse(grepl("G",g_group), g_group, func_groups[as.character(g_group)])
   tmp <- tmp %>%
-    dplyr:: filter(v_gene == func_groups[as.character(group)], !is.na(v_allele)) %>% 
+    dplyr:: filter(v_gene == v_gene_cut, !is.na(v_allele)) %>% 
     ungroup()
   
   tmp <- tmp %>% dplyr::group_by(subject)
@@ -162,9 +235,10 @@ data_cutoff <- function(tmp, func_groups, group, allele_thresh = 0.5, or_allele)
 }
 
 
-data_cutoff_allele_thresh <- function(tmp, func_groups, group, allele_thresh = c("01" = 0.5), or_allele){
+data_cutoff_allele_thresh <- function(tmp, func_groups, g_group, allele_thresh = c("01" = 0.5), or_allele){
+  v_gene_cut <- ifelse(grepl("G",g_group), g_group, func_groups[as.character(g_group)])
   tmp <- tmp %>%
-    dplyr:: filter(v_gene == func_groups[as.character(group)], !is.na(v_allele)) %>% 
+    dplyr:: filter(v_gene == v_gene_cut, !is.na(v_allele)) %>% 
     ungroup()
   
   tmp <- tmp %>% dplyr::group_by(subject)
@@ -230,13 +304,13 @@ plot_zygousity_allele_thresh <- function(tmp, state, allele_thresh, g){
     
     tmp_plot <-
       tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
-      dplyr:: mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p],) %>% ungroup() %>% 
-      dplyr::mutate(jitter_offset = jitter(loc_plot))
+      dplyr:: mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p],) %>% ungroup()
+      if(length(tmp_plot$loc_plot)) tmp_plot <- tmp_plot %>% dplyr::mutate(jitter_offset = jitter(loc_plot))
   }else{
     tmp_plot <-
       tmp_plot %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>% 
-      dplyr:: mutate(loc_plot = loc2,) %>% ungroup() %>% 
-      dplyr::mutate(jitter_offset = (loc_plot))
+      dplyr:: mutate(loc_plot = loc2,) %>% ungroup()
+      if(length(tmp_plot$loc_plot)) tmp_plot <- tmp_plot %>% dplyr::mutate(jitter_offset = jitter(loc_plot))
   }
   
   tickvals_tmp <-
@@ -369,7 +443,7 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
     ggplot(data[data$id>=low_bound & data$id<upper_boud, ], aes(x=(pos), y=(allele))) + 
       geom_tile(aes(fill=value),colour="white") + 
       geom_text(aes(label = annot_text), color = "black") +
-      coord_equal(expand = F, xlim = c(low_bound, upper_boud), ratio = 9/5, clip = "off") + 
+      #coord_equal(expand = F, xlim = c(low_bound, upper_boud), ratio = 9/5, clip = "off") + 
       bbplot::bbc_style() + 
       scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme_align
     
@@ -396,39 +470,9 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   
   
   
-  p1 <- cowplot::plot_grid(plotlist = p_list, nrow=4)
+  p1 <- cowplot::plot_grid(plotlist = p_list, nrow=4, align = "v")
   
-  return(cowplot::plot_grid(plotlist = list(p_dend, p1), nrow = 2, rel_heights = c(0.4,0.6)))
-  # p1 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id<=80, ], aes(x=(pos), y=(allele))) + 
-  #   geom_tile(aes(fill=value),colour="white") + 
-  #   geom_text(aes(label = annot_text), color = "black") +
-  #   coord_equal(expand = F, xlim = c(1, 80)) + bbplot::bbc_style() + theme_align
-  # 
-  # p2 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>80 & matrix_sequences_plot$id <=160, ], aes(x=(pos), y=(allele))) + 
-  #   geom_tile(aes(fill=value),colour="white") + 
-  #   geom_text(aes(label = annot_text), color = "black") +
-  #   coord_equal(expand = F, xlim = c(81, 160)) + bbplot::bbc_style() + theme_align
-  # 
-  # p3 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>160 & matrix_sequences_plot$id <=240, ], aes(x=(pos), y=(allele))) + 
-  #   geom_tile(aes(fill=value),colour="white") + 
-  #   geom_text(aes(label = annot_text), color = "black") +
-  #   coord_equal(expand = F, xlim = c(161, 240)) + bbplot::bbc_style() + theme_align
-  # 
-  # 
-  # p4 <- ggplot(matrix_sequences_plot[matrix_sequences_plot$id>240, ], aes(x=(pos), y=(allele))) + 
-  #   geom_tile(aes(fill=value),colour="white") + 
-  #   geom_text(aes(label = annot_text), color = "black") +
-  #   coord_equal(expand = F, xlim = c(240, 318)) + bbplot::bbc_style()  + 
-  #   scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme(
-  #     axis.line = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(),
-  #     axis.ticks.y = element_blank(),
-  #     panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-  #     panel.border = element_blank(), panel.background = element_blank(), 
-  #     legend.position = "none" ) 
-  # 
-  
-  #cowplot::plot_grid(p_dend, p1, p2, p3, p4, nrow=5, ncol = 1, rel_heights = c(0.4, 0.15, 0.15, 0.15, 0.15))
-  
+  return(cowplot::plot_grid(plotlist = list(p_dend, p1), nrow = 2, rel_heights = c(0.4,0.6), align = "hv"))
 }
 
 rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, border = 2, 
