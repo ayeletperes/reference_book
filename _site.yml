@@ -6,7 +6,7 @@ navbar:
   left:
     - text: "Intro"
       href: index.html
-    - text: "Functional Groups"
+    - text: "Functional Groups V1"
       menu:
       - text: "IGHV1-18"
         href: G1.html
@@ -26,12 +26,16 @@ navbar:
         href: G9.html
       - text: "IGHV1-8"
         href: G10.html
+    - text: "Functional Groups V2"
+      menu:
       - text: "IGHV2-26"
         href: G11.html
       - text: "IGHV2-5"
         href: G12.html
       - text: "IGHV2-70/IGHV2-70D"
         href: G13.html
+    - text: "Functional Groups V3"
+      menu:
       - text: "IGHV3-11"
         href: G14.html
       - text: "IGHV3-13"
@@ -70,6 +74,8 @@ navbar:
         href: G31.html
       - text: "IGHV3-9"
         href: G32.html
+    - text: "Functional Groups V4"
+      menu:
       - text: "IGHV4-28"
         href: G33.html
       - text: "IGHV4-30-2/IGHV4-30-4"
@@ -94,12 +100,18 @@ navbar:
         href: G43.html
       - text: "IGHV4-61"
         href: G44.html
+    - text: "Functional Groups V5"
+      menu:        
       - text: "IGHV5-10-1"
         href: G45.html
       - text: "IGHV5-51"
         href: G46.html
+    - text: "Functional Groups V6"
+      menu:        
       - text: "IGHV6-1"
         href: G47.html
+    - text: "Functional Groups V7"
+      menu:        
       - text: "IGHV7-4-1"
         href: G48.html
   right:
