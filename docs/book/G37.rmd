@@ -1,12 +1,4 @@
-# NA
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
-pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
-               'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
-               'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
-               'plotly', 'ggdendro', "RColorBrewer", install = F)
-```
-
+# "IGHV4-34"
 ```{r}
 source("functions.R")
 ```
@@ -91,7 +83,7 @@ or_allele <-
 
 allele_thresh = 0.5
 
-tmp <- data_cutoff(data, func_g_groups, g_g_group, allele_thresh, or_allele)
+tmp <- data_cutoff(data, func_g_groups, g_group, allele_thresh, or_allele)
 
 ```
 
