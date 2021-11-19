@@ -1,0 +1,108 @@
+---
+title: "Functional groups"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+biblio-style: apalike
+link-citations: yes
+---
+# Functional groups
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
+#options(repos = BiocManager::repositories())
+pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot', 'scales',
+               'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
+               'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
+               'plotly', 'ggdendro', "RColorBrewer", install = F)
+```
+
+```{r}
+source("functions.R")
+```
+
+## Sequence pre-processing
+
+Summary statistics for each of the functional groups declared in the app.
+
+The app includes the P1 and P11 naive datasets and the P4 non-naive dataset.
+
+For P1 and P11 the following filtration criteria were applied:
+
+* Functional sequence, no stop codons or frame shifts.
+* Sequences which start from position 1 of the V gene.
+* Sequences which didn't have gaps open (-) and didn't include any N's
+* After changing into group annotations, sequences which had more than a single assignment in naive repertoires were remove.
+
+The groups were created with similarity of 95% based on complete linkage and functional sequences and up to position 318.
+
+## Group devision by 95% similarity
+
+```{r, fig.asp=0.8, out.width="1000%", fig.width=20}
+load("data.rda")
+mat <- mat_list$IGH$functional$nonsingle$all$`318`
+clust <- hclust(as.dist(mat), "complete")
+clusters <- cutree(clust, h = 0.05)
+names(clusters) <- names(cutree(clust, h = 0.05))
+dend <- as.dendrogram(clust)
+fam_clusters <- clusters
+
+clusters <- clusters[order.dendrogram(dend)]
+clusters_numbers <- unique(clusters) - (0 %in% clusters)
+n_clusters <- length(clusters_numbers)
+
+cols <- c("#FAAB18", "#1380A1","#990000", "#588300")
+
+pal <- cols %>% 
+  newpal(names = c("orangy", "bluish", "redish", "greeny"))
+
+mypal = setNames(alpha(pal %>% usecol(n = n_clusters),0.99), 1:n_clusters) 
+cluster_new <- mypal[clusters]
+
+clusters_imgt <- clusters
+clusters_imgt <- getGene(names(clusters_imgt), strip_d = F, omit_nl = F)
+
+imgt_colors <-
+  setNames(alpha(pal %>% usecol(n = length(unique(clusters_imgt))), 0.99), sort(unique(clusters_imgt)))
+clusters_imgt <-   imgt_colors[clusters_imgt]
+
+dend2 <-
+  dend %>% branches_attr_by_clusters(clusters, values = mypal) %>% dendextend::set("labels_cex", 0.9)
+
+
+par(mar = c(12, 4, 1, 1))
+dend2 %>% plot
+dend2 %>% rect.dendrogram2(
+  k = n_clusters,lower_rect = 0,
+  text = clusters_numbers, xpd = T,
+  #border = 8,
+  lty = 5,
+  lwd = 2,
+  border = mypal
+)
+colored_bars(
+  cbind(clusters_imgt, cluster_new),
+  dend2,
+  sort_by_labels_order = F,
+  rowLabels = c("IMGT", "NEW")
+)
+```
+
+
+## Projects sequence depth
+
+```{r}
+load("data_frac_new2.rda")
+
+data <- data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`
+
+depth <- data %>% dplyr::group_by(project, subject) %>% dplyr::summarise(counts = sum(count))
+
+ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
+  bbplot::bbc_style() + scale_color_manual(values = alpha(c("#1380A1", "#FAAB18", "#990000"),0.99)) +
+  theme(axis.text.x = element_text(size = 12, angle = 45), 
+        axis.text.y = element_text(size = 14), legend.position = "none") #+
+  	#scale_x_continuous(labels = scales::label_number(suffix = " K", scale = 1e-5)) # millions
+
+```
+

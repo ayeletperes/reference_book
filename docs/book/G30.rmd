@@ -1,12 +1,4 @@
-# NA
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
-pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot',
-               'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
-               'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
-               'plotly', 'ggdendro', "RColorBrewer", install = F)
-```
-
+# "IGHV3-73"
 ```{r}
 source("functions.R")
 ```
