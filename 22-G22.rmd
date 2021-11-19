@@ -43,7 +43,7 @@ The group of `r group` includes `r sum(grepl(paste0(g,"[*]", collapse = "|"), fu
 For each allele we counted the number of appearances across the population, any appearance was considered valid. 
 
 ```{r}
-allele_appearance(data, g_group)
+allele_appearance(data, g_group, allele_db)
 ```
 
 ## Group alignment
@@ -60,7 +60,7 @@ seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-sequence_depth(data, g_group)
+sequence_depth(data, g_group, allele_db)
 ```
 
 ## 0.5% cutoff 

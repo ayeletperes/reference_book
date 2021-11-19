@@ -1,14 +1,17 @@
 bookdown::gitbook:
   css: style.css
+  split_by: section
   config:
     edit:
       link: https://github.com/ayeletperes/reference_book/edit/master/%s
       text: "Suggest an edit"
     toc:
-      collapse: subsection
+      before: |
+        <li><a href="./">Functional groups referebce book</a></li>
+      after: |
+        <li><a href="./">© Copyright 2021 [The Functional Group Authors] (https://github.com/ayeletperes/reference_book/master/AUTHORS) Software licensed under the [Apache License, v2.0] (https://www.apache.org/licenses/LICENSE-2.0).</a></li>
+      collapse: section
       scroll_highlight: true
-      before: null
-      after: null
     toolbar:
       position: fixed
     search:

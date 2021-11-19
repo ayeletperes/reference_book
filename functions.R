@@ -1,10 +1,22 @@
 ## functions
 
 
-allele_appearance <- function(data_, g_group){
+allele_appearance <- function(data_, g_group, allele_db){
+  
+  tmp_allele_db <-
+    allele_db %>% dplyr::filter(grepl(as.character(g_group), new_allele)) %>%
+    dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+  
+  or_allele <-
+    setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
+      paste0(g_group, "[*]"),
+      "",
+      tmp_allele_db$new_allele
+    )))
+  
   n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
   data_ <- data_[grepl(g_group,v_gene)]
-  data_[,v_alleles2:=paste0("*",v_allele)]
+  data_[,v_alleles2:=or_allele[v_allele]]
   ggplot(data_, aes(v_alleles2, fill = v_alleles2)) + 
     geom_bar() + facet_grid(.~project) + 
     labs(x = "allele", y = "# Individuals", fill = "") + 
@@ -14,11 +26,23 @@ allele_appearance <- function(data_, g_group){
   
 }
 
-sequence_depth <- function(data_, g_group){
+sequence_depth <- function(data_, g_group, allele_db){
+  
+  tmp_allele_db <-
+    allele_db %>% dplyr::filter(grepl(as.character(g_group), new_allele)) %>%
+    dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+  
+  or_allele <-
+    setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
+      paste0(g_group, "[*]"),
+      "",
+      tmp_allele_db$new_allele
+    )))
   
   n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
   data_ <- data_[grepl(g_group,v_gene)]
-  data_[,v_alleles2:=paste0("*",v_allele)]
+  data_[,v_alleles2:=or_allele[v_allele]]
+  
   data_[,text:=paste(
     '</br>Project: ',
     project,
