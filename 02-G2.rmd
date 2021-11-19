@@ -43,7 +43,7 @@ The group of `r group` includes `r sum(grepl(paste0(g,"[*]", collapse = "|"), fu
 For each allele we counted the number of appearances across the population, any appearance was considered valid. 
 
 ```{r}
-allele_appearance(data, g_group)
+allele_appearance(data, g_group, allele_db)
 ```
 
 ## Group alignment
@@ -60,7 +60,7 @@ seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-sequence_depth(data, g_group)
+sequence_depth(data, g_group, allele_db)
 ```
 
 ## 0.5% cutoff 
@@ -167,7 +167,7 @@ knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_grou
 
 From the results we belive that the cutoff for this group should be closer to $2\%$ except allele **05** that should stay at $0.5\%$                    , and for the adjusted states the allele combinations and the relations are stated in the table below.
 
-### Allele specific cutoff: $2\%$ for all except $0.5\%$ for allele **05**
+### Allele specific cutoff: 2\% for all except 0.5% for allele **05**
 ```{r}
 
 tmp_allele_db <-
@@ -222,7 +222,7 @@ for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::
 tagList(p_list)
 ```
 
-### Allele specific cutoff: $5\%$ for all except $0.5\%$ for allele **05**
+### Allele specific cutoff: 5\% for all except 0.5\% for allele **05**
 
 ```{r}
 
