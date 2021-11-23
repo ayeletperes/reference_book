@@ -63,7 +63,7 @@ data <-
 data[, v_call := paste0(v_gene, "*", v_allele)]
 data$group_plot <- ifelse(is.na(data$j_call), 1, 2)
 
-ui <- fillPage(
+ui <- fluidPage(
   tags$head(tags$style(HTML('
       .same-row {
         max-width: 200px;
