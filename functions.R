@@ -670,10 +670,9 @@ rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, 
 
 source_haplo_usage <- function(g_group, allele_thresh){
   cat(
-    '<iframe width="900" height="600" 
+    '<iframe width="900" height="800" 
   src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22&allele_thresh=%22",allele_thresh,"%22"),
-    'frameborder="0" allow="accelerometer; autoplay; encrypted-media;
-  gyroscope; picture-in-picture">
+    '>
   </iframe>', sep = ""
   )
 }

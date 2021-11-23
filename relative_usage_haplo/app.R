@@ -146,7 +146,7 @@ server <- function(input, output, session) {
               tabPanel(
                 paste0("State ", i),
 
-                column(9,fluidPage(
+                #column(9,fluidPage(
                   shinyWidgets::materialSwitch(
                     inputId = paste0("hetro", i),
                     label = "J6 heterozygous",
@@ -154,9 +154,10 @@ server <- function(input, output, session) {
                     right = TRUE
                   )
                 ,
-                plotlyOutput(paste0('scatter', i)))),
+                plotlyOutput(paste0('scatter', i)),#)),
                 #div(style = "height:40px"),
-                column(3, plotOutput(paste0('hover', i)))
+                #column(3,
+                       plotOutput(paste0('hover', i))#)
 
               ))
   })
