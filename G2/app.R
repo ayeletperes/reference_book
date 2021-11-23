@@ -9,7 +9,6 @@
 
 library(shiny)
 library(rdrop2)
-
 # Authenticate and save token for later use2
 token <- drop_auth(rdstoken = "dropbox_token.rds")
 
@@ -24,13 +23,17 @@ ui <- fluidPage(
         uiOutput('ab1_out'),
         shiny::actionButton(inputId='ab2', label="Reload text", 
                             icon = icon("sync-alt")),
-        
+        actionButton("refresh", "Refresh app"),
         #htmlOutput("df_output"),
         uiOutput('markdown')
     )
 )
 
 server <- function(input, output, session) {
+    
+    observeEvent(input$refresh, {
+      session$reload();
+    })
     
     observe({
         query <- parseQueryString(session$clientData$url_search)
@@ -50,7 +53,7 @@ server <- function(input, output, session) {
     
         observeEvent(input$ab2, {
             drop_download(paste0("public/conclusions/",group,".docx"), local_path = paste0(group,".docx"),
-                          overwrite = TRUE, verbose = FALSE, progress = FALSE)
+                          overwrite = TRUE, verbose = FALSE, progress = FALSE, dtoken =token)
 
             invisible(rmarkdown::pandoc_convert(input =  paste0(group,".docx"), to = "markdown", output = paste0(group,"_docx.md"), options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
             output$markdown <- renderUI({
@@ -61,7 +64,7 @@ server <- function(input, output, session) {
         
         output$markdown <- renderUI({
             drop_download(paste0("public/conclusions/",group,".docx"), local_path = paste0(group,".docx"),
-                          overwrite = TRUE, verbose = FALSE, progress = FALSE)
+                          overwrite = TRUE, verbose = FALSE, progress = FALSE, dtoken = token)
             
             invisible(rmarkdown::pandoc_convert(input =  paste0(group,".docx"), to = "markdown", output = paste0(group,"_docx.md"), options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
             

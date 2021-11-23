@@ -60,7 +60,7 @@ seq_align(v_calls, allele_db, vgerms, chain, mat, g_group)
 To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-sequence_depth(data, g_group, allele_db)
+tagList(sequence_depth(data, g_group, allele_db))
 ```
 
 ## 0.5% cutoff 
@@ -89,15 +89,8 @@ tmp <- data_cutoff(data, func_g_groups, g_group, allele_thresh, or_allele)
 
 With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
 
-```{r, warning = F, error=F, message = F}
-p_list <- c()
-for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::pull(zygousity_state)))){
-  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g_group) %>% config(edits = list(shapePosition = TRUE),
-                    scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
-  #
-}
-
-tagList(p_list)
+```{r eval=knitr::is_html_output(excludes = 'epub'), results = 'asis', echo = F}
+source_haplo_usage(g_group, allele_thresh)
 ```
 
 ## Observations
