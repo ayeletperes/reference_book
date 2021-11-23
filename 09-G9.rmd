@@ -51,7 +51,7 @@ allele_appearance(data, g_group, allele_db)
 To examine the potential cutoff we observed the sequence depth for each allele
 
 ```{r}
-sequence_depth(data, g_group, allele_db)
+tagList(sequence_depth(data, g_group, allele_db))
 ```
 
 ## Observations

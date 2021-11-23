@@ -89,9 +89,10 @@ sequence_depth <- function(data_, g_group, allele_db){
     return(g1)
   })
   
-  subplot(p_list, nrows = length(colors), 
-          shareY = F, titleX = T, 
-          titleY = T, shareX = F, margin = 0.07)
+  # subplot(p_list, nrows = length(colors), 
+  #         shareY = F, titleX = T, 
+  #         titleY = T, shareX = F, margin = 0.2)
+  return(p_list)
 }
 
 
@@ -171,9 +172,11 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
   ticktext <-
     tmp_plot %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
   
+  tmp_plot <- tmp_plot %>% rowwise() %>% dplyr::mutate(group = paste0(project, "-", v_alleles_p)) %>%
+    highlight_key(., ~ subject)
+  
   plotly1 <-
-    tmp_plot %>% rowwise() %>% dplyr::mutate(group = paste0(project, "-", v_alleles_p)) %>%
-    highlight_key(., ~ subject) %>%
+    tmp_plot %>%
     plot_ly() %>%
     add_trace(
       type = "scatter",
@@ -226,16 +229,78 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
         tickvals = tickvals,
         ticktext = ticktext
       ),
-      yaxis = list(title = "Relative allele frequency",
+      yaxis = list(title = "Relative\nallele frequency",
                    range = c(0,1.05))
-    )  %>% plotly::highlight(
-      on = "plotly_click",
-      selected = attrs_selected(showlegend = FALSE),
-      opacityDim = 0.3,
-      persistent = TRUE
-    ) %>% plotly_build()
+    )
   
-  return(plotly1)
+  
+  plotly2 <-
+    tmp_plot %>%
+    plot_ly() %>%
+    add_trace(
+      type = "scatter",
+      x = ~ (jitter_offset),
+      y = ~ freq2,
+      text = ~ text,
+      symbol = ~ project,
+      mode = 'markers',
+      marker = list(color = "grey", size = 12),
+      showlegend = FALSE,
+      opacity = 0.9,
+      hoverinfo = 'none',
+      legendgroup = ~ project
+    ) %>%
+    add_trace(
+      type = "scatter",
+      x = ~ (jitter_offset),
+      y = ~ freq2,
+      text = ~ text,
+      color = ~ v_alleles_p,
+      mode = 'markers',
+      showlegend = FALSE,
+      opacity = 0.8,
+      hoverinfo = 'text',
+      legendgroup = ~ v_alleles_p
+    ) %>%
+    add_trace(
+      x = ~ as.numeric(loc_plot),
+      y = ~ freq2,
+      color = ~ v_alleles_p,
+      type = "box",
+      hoverinfo = "none",
+      fillcolor = "transparent",
+      showlegend = FALSE,
+      name = ~ v_alleles_p,
+      legendgroup = ~ v_alleles_p
+    ) %>%
+    layout(
+      hovermode = 'closest',
+      shapes = list(hline(allele_thresh/100)),
+      legend = list(
+        tracegroupgap = 20,
+        title = list(text =
+                       '<b>  </b>'),
+        orientation = "V"
+      ),
+      xaxis = list(
+        title = paste0(g, " Alleles"),
+        autotick = F,
+        tickmode = "array",
+        tickvals = tickvals,
+        ticktext = ticktext
+      ),
+      yaxis = list(title = "Relative\nrepertoire frequency",
+                   range = c(0,1.05))
+    )  
+  
+  return(
+    subplot(plotly1, plotly2, nrows = 2,
+            shareY = T, titleX = F,
+            titleY = T, shareX = T, margin = 0.05)   %>% plotly::highlight(
+              on = "plotly_click",
+              opacityDim = 0.3
+            )
+  )
 }
 
 data_cutoff <- function(tmp, func_groups, g_group, allele_thresh = 0.5, or_allele){
@@ -601,4 +666,14 @@ rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, 
   }
   par(xpd = old_xpd)
   invisible(retval)
+}
+
+source_haplo_usage <- function(g_group, allele_thresh){
+  cat(
+    '<iframe width="900" height="600" 
+  src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22&allele_thresh=%22",allele_thresh,"%22"),
+    'frameborder="0" allow="accelerometer; autoplay; encrypted-media;
+  gyroscope; picture-in-picture">
+  </iframe>', sep = ""
+  )
 }
