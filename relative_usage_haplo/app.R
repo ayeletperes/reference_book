@@ -101,7 +101,7 @@ server <- function(input, output, session) {
 
 
 
-  input_vals <- reactiveValues(tabs_count = 0, g_group = "IGHV2-26G11", g = allele_db %>% filter(gene_group == "IGHV2-26G11") %>% pull(gene) %>% unique(), v_gene_cut = "IGHV2-26G11", allele_thresh = NULL)
+  input_vals <- reactiveValues(tabs_count = 0, g_group = "IGHV1-46G6", g = allele_db %>% filter(gene_group == "IGHV1-46G6") %>% pull(gene) %>% unique(), v_gene_cut = "IGHV1-46G6", allele_thresh = NULL)
   query <- eventReactive(session$clientData$url_search,{
      parseQueryString(session$clientData$url_search)
   })
@@ -333,14 +333,14 @@ server <- function(input, output, session) {
 
         if (length(plot_data$loc_plot))
           plot_data <-
-          plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 2))
+          plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 1))
       } else{
         plot_data <-
           plot_data %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>%
           dplyr::mutate(loc_plot = loc2, ) %>% ungroup()
         if (length(plot_data$loc_plot))
           plot_data <-
-            plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 2))
+            plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 1))
       }
 
       tickvals_tmp <-
