@@ -17,7 +17,7 @@ allele_appearance <- function(data_, g_group, allele_db){
   n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
   data_ <- data_[grepl(g_group,v_gene)]
   data_[,v_alleles2:=or_allele[v_allele]]
-  ggplot(data_, aes(v_alleles2, fill = v_alleles2)) + 
+  ggplot(data_ %>% filter(is.na(j_call)), aes(v_alleles2, fill = v_alleles2)) + 
     geom_bar() + facet_grid(.~project) + 
     labs(x = "allele", y = "# Individuals", fill = "") + 
     bbplot::bbc_style()  + theme(legend.position = "right", 
@@ -40,7 +40,7 @@ sequence_depth <- function(data_, g_group, allele_db){
     )))
   
   n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
-  data_ <- data_[grepl(g_group,v_gene)]
+  data_ <- data_[grepl(g_group,v_gene) & is.na(j_call)]
   data_[,v_alleles2:=or_allele[v_allele]]
   
   data_[,text:=paste(
@@ -671,7 +671,7 @@ rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, 
 source_haplo_usage <- function(g_group, allele_thresh){
   cat(
     '<iframe
-  src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22&allele_thresh=%22",allele_thresh,"%22"),
+  src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22"),
     ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2);width:600px;height:900px;" cellspacing="0">
   </iframe>', sep = ""
   )

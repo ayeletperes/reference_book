@@ -11,7 +11,7 @@ func <-  data.frame(allele = names(vgerms[[chain]]), functionality = !grepl("(OR
 
 mat <- mat_list$IGH$functional$nonsingle$all$`318`
 
-load("data_frac_new.rda")
+load("data_frac_new2.rda")
 data <- setDT(data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`)
 data[,v_call:=paste0(v_gene,"*",v_allele)]
 load("alleles_dbs.rda")
