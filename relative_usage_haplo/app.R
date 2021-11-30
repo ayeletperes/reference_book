@@ -73,7 +73,7 @@ ui <- fluidPage(
     '))),
   theme = shinytheme("sandstone"),
   fluidRow(
-    column(2,shinyWidgets::switchInput(
+    column(4,shinyWidgets::switchInput(
       inputId = "hetro",
       label = "J6 heterozygous",
       labelWidth = "150px"
@@ -237,6 +237,9 @@ server <- function(input, output, session) {
                   tabPanel(
                     paste0("State ", i),
                     plotlyOutput(paste0('scatter', i)),
+                    br(),
+                    br(),
+                    br(),
                     plotlyOutput(paste0('hover', i))
 
                   ))
@@ -508,7 +511,7 @@ server <- function(input, output, session) {
         margin = 0.1,
         which_layout = 1
       ) %>% layout(
-        legend = list(orientation = 'h', y = 1.2, x = 0),
+        legend = list(orientation = 'h', y = -0.2, x = 0),
         xaxis = list(
           titlefont = list(size = 18),
           tickfont = list(size = 18)
@@ -586,7 +589,7 @@ server <- function(input, output, session) {
         paste0(
           "Sample ",
           subject_key,
-          ' is not haplotypable.\nPlease choose a different sample'
+          ' dont have J6 sequences with the selected gene for this sample.\nPlease choose a different sample'
         )
       ))
 
