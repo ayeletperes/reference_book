@@ -158,6 +158,8 @@ server <- function(input, output, session) {
       allele_thresh <- setNames(as.numeric(sapply(strsplit(allele_thresh,"q"),"[[",2)),allele_thresh_names)
       names_missing <- unique(data_cut()$v_allele_axis)[!unique(data_cut()$v_allele_axis) %in% allele_thresh_names]
       if(length(names_missing)!=0) allele_thresh <- c(allele_thresh, setNames(rep(0.5, length(names_missing)), names_missing))
+      names_over <- unique(allele_thresh_names)[!allele_thresh_names %in% unique(data_cut()$v_allele_axis)]
+      if(length(names_over)!=0) allele_thresh <- allele_thresh[! names(allele_thresh) %in% names_over]
       input_vals$allele_thresh <- allele_thresh
     }
   })
@@ -196,6 +198,7 @@ server <- function(input, output, session) {
 
   data_gene <- eventReactive(input$allele1,{
     tmp <- isolate(data_cut())
+    print( a_thresh$a_thresh)
     tmp <- tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis]/100)
     tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
       dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
