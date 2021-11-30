@@ -198,15 +198,3 @@ tmp <- data_cutoff(data, func_groups, g_group, allele_thresh, or_allele)
 
 source_haplo_usage_specific(g_group,paste0(or_allele, "q", allele_thresh, collapse = "b"))
 ```
-
-
-```{r, warning = F, error=F, message = F}
-p_list <- c()
-for(i in as.character(unique(tmp %>% dplyr::arrange(zygousity_state) %>% dplyr::pull(zygousity_state)))){
-  p_list[[i]] <- plot_zygousity(tmp, i, allele_thresh, g) %>% config(edits = list(shapePosition = TRUE),
-                    scrollZoom = FALSE) %>% layout(title = paste0("state ", i))
-  #
-}
-
-tagList(p_list)
-```

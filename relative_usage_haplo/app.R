@@ -415,6 +415,7 @@ server <- function(input, output, session) {
           colors = colors(),
           type = "box",
           hoverinfo = "none",
+          showlegend = FALSE,
           fillcolor = "transparent",
           name = ~ v_alleles_p,
           legendgroup = ~ v_alleles_p

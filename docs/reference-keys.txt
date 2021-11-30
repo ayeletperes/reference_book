@@ -16,7 +16,6 @@ sequence-depth-1
 cutoff-1
 observations-1
 conclusions-1
-allele-specific-cutoff-2-for-all-except-0.5-for-allele-05
 allele-specific-cutoff-5-for-all-except-0.5-for-allele-05
 ighv1-24---g3
 allele-appearnce-2
