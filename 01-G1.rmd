@@ -97,7 +97,7 @@ source_haplo_usage(g_group, allele_thresh)
 
 This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`)
+You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`){target="_blank"}
 
 ```{r, message=F, echo=F, warning=F}
 knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group))
@@ -172,7 +172,7 @@ DT::datatable(
 
 ```
 
-For interactive play on the threshold and relative allele fractions, please refer to [this site](https://peresay.shinyapps.io/cluster_app/?url=%22page_allele%22&func_group=%22IGHV1-2%22&allele_thresh=%212.52%22)
+For interactive play on the threshold and relative allele fractions, please refer to [this site](https://peresay.shinyapps.io/cluster_app/?url=%22page_allele%22&func_group=%22IGHV1-2%22&allele_thresh=%212.52%22){target="_blank"}
 
 
 ```{r}
@@ -193,6 +193,12 @@ allele_thresh = 12.5
 tmp <- data_cutoff(data, func_groups, g_group, allele_thresh, or_allele)
 
 ```
+
+```{r, eval=knitr::is_html_output(excludes = "epub"), results = 'asis', echo = F}
+
+source_haplo_usage_specific(g_group,paste0(or_allele, "q", allele_thresh, collapse = "b"))
+```
+
 
 ```{r, warning = F, error=F, message = F}
 p_list <- c()
