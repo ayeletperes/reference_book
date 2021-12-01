@@ -158,9 +158,9 @@ knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_grou
 
 ## Conclusions
 
-From the results we believe that the cutoff for this group should be closer to $5\%$ for alleles **01** and **05**, and for allele **04** it should stay at $0.5\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+From the results we believe that the cutoff for this group should be closer to $5\%$ for alleles **01**, **04**, and **05**, and for allele **02** it should stay at $0.5\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
 
-### Allele specific cutoff: 5\% for alleles **01,05** except 0.5\% for allele **05**
+### Allele specific cutoff: 5\% for alleles **01,05, and 04** except 0.5\% for allele **02**
 
 ```{r}
 
@@ -176,7 +176,7 @@ or_allele <-
   )))
 
 allele_thresh = setNames(rep(5,length(names(or_allele))),names(or_allele))
-allele_thresh["V1-3*04"]<-0.5
+allele_thresh["V1-3*02"]<-0.5
 
 tmp <- data_cutoff_allele_thresh(data, func_groups, g_group, allele_thresh, or_allele)
 
@@ -203,3 +203,4 @@ DT::datatable(
       )
 
 ```
+

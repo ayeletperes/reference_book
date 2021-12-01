@@ -306,7 +306,7 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
 data_cutoff <- function(tmp, func_groups, g_group, allele_thresh = 0.5, or_allele){
   v_gene_cut <- ifelse(grepl("G",g_group), g_group, func_groups[as.character(g_group)])
   tmp <- tmp %>%
-    dplyr:: filter(v_gene == v_gene_cut, !is.na(v_allele)) %>% 
+    dplyr:: filter(v_gene == v_gene_cut, !is.na(v_allele), is.na(j_call)) %>% 
     ungroup()
   
   tmp <- tmp %>% dplyr::group_by(subject)

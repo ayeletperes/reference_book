@@ -152,6 +152,8 @@ knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_grou
 
 From the results we believe that the cutoff for this group should be closer to $5\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
 
+### Allele specific cutoff: 5\% for all except 0.5\% for allele **03**
+
 ```{r}
 
 tableData <- data_cutoff(data, func_groups, g_group, 5, or_allele) %>% dplyr::group_by(zygousity_state, v_allele) %>% dplyr::summarise(mean_freq = paste0(round(quantile(freq, 3/4),3),":", round(quantile(freq, 1/4),3)), v_alleles_abc = unique(v_alleles_abc)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(mean_freq, collapse = ";"))
@@ -188,7 +190,8 @@ or_allele <-
     tmp_allele_db$new_allele
   )))
 
-allele_thresh = 5
+allele_thresh = setNames(rep(5,length(names(or_allele))),names(or_allele))
+allele_thresh["V1-18*03"]<-0.5
 
 tmp <- data_cutoff(data, func_groups, g_group, allele_thresh, or_allele)
 
