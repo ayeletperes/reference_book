@@ -472,7 +472,7 @@ server <- function(input, output, session) {
             v_allele_axis = or_allele()[v_allele]
           )
 
-        plt_data_haplo$db <- plot_data
+        plt_data_haplo$db <- tmp_haplo
         shiny:::flushReact()
         #plot_data <- plt_data()
 
@@ -768,7 +768,10 @@ server <- function(input, output, session) {
           subject_key <-
             eventdat[['key']] # Index of the data point being charted
 
-          plot_bar <- isolate(plt_data_haplo$db)
+          print(plt_data_haplo$db)
+          plot_bar <- plt_data_haplo$db
+
+          print(dplyr::filter(plot_bar,!is.na(j_call), subject == subject_key))
 
           plot_bar <-
             dplyr::filter(plot_bar,!is.na(j_call), subject == subject_key)

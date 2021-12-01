@@ -157,3 +157,4 @@ knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_grou
 ```
 
 ## Conclusions
+
