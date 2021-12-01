@@ -87,7 +87,7 @@ tmp <- data_cutoff(data, func_g_groups, g_group, allele_thresh, or_allele)
 
 ```
 
-With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
+With the selected cutoff we saw that there are `r length(unique(tmp %>% filter(is.na(j_call)) %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
 
 ```{r eval=knitr::is_html_output(excludes = 'epub'), results = 'asis', echo = F}
 source_haplo_usage(g_group, allele_thresh)
@@ -97,7 +97,7 @@ source_haplo_usage(g_group, allele_thresh)
 
 This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`)
+You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`){target="_blank"}
 
 ```{r, message=F, echo=F, warning=F}
 knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group))

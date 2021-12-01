@@ -1,27 +1,23 @@
 options(repos = BiocManager::repositories())
-pacman::p_load(
-  'dplyr',
-  'tidyr',
-  'htmltools',
-  'bbplot',
-  'ggplot2',
-  'shiny',
-  'shinyWidgets',
-  'data.table',
-  'alakazam',
-  "unikn",
-  'plotly',
-  'ggdendro',
-  "RColorBrewer",
-  install = F
-)
-library(shinyWidgets)
-library(unikn)
-library(bbplot)
-library(plotly)
-library(ggplot2)
-library(shinythemes)
 
+require(dplyr)
+require(tidyr)
+require(htmltools)
+require(bbplot)
+require(ggplot2)
+require(shiny)
+require(shinyWidgets)
+require(data.table)
+require(alakazam)
+require(unikn)
+require(plotly)
+require(RColorBrewer)
+require(unikn)
+require(bbplot)
+require(plotly)
+require(ggplot2)
+require(shinythemes)
+library(htmlwidgets)
 
 
 hline <- function(y = 0,
@@ -35,7 +31,11 @@ hline <- function(y = 0,
     xref = "x",
     y0 = y,
     y1 = y,
-    line = list(color = color, dash = "dot", width = 4)
+    line = list(
+      color = color,
+      dash = "dot",
+      width = 4
+    )
   )
 }
 
@@ -64,54 +64,82 @@ data[, v_call := paste0(v_gene, "*", v_allele)]
 data$group_plot <- ifelse(is.na(data$j_call), 1, 2)
 
 ui <- fluidPage(
-  tags$head(tags$style(HTML('
+  title = "Groups relative usage",
+  tags$head(
+    tags$style(
+      HTML(
+        '
       .same-row {
         max-width: 200px;
         display: table-cell;
         padding-right: 10px;
       }
-    '))),
+    '
+      )
+    ),
+    tags$script(
+      "$(document).on('change', '.dynamicSI input', function () {
+                              Shiny.setInputValue('lastSelectId', this.id, {priority: 'event'});
+                             });"
+    )
+  ),
   theme = shinytheme("sandstone"),
   fluidRow(
-    column(4,shinyWidgets::switchInput(
-      inputId = "hetro",
+    column(5,switchInput(
+      inputId = paste0("hetro"),
       label = "J6 heterozygous",
-      labelWidth = "150px"
+      value = F, width = "100%"
+
     )),
-    column(2,shinyWidgets::dropdownButton(inputId = "drop_allele",
-                                          actionBttn(
-                                            inputId = "reset_input",
-                                            label = "reset thresholds",
-                                            style = "minimal",
-                                            color = "success", size = "sm",
-                                            icon = icon("undo")
-                                          ),
-                                          br(),
-                                          uiOutput("thresh"), icon = icon("sliders-h"),
-                                          label = "alleles thresholds",
-                                          circle = FALSE, status = "btn-dark",size = "sm")
-    )
+    column(3,shinyWidgets::dropdownButton(
+      inputId = "drop_allele",
+      actionBttn(
+        inputId = "reset_input",
+        label = "reset thresholds",
+        style = "minimal",
+        color = "success",
+        size = "sm",
+        icon = icon("undo")
+      ),
+      br(),
+      uiOutput("thresh"),
+      icon = icon("sliders-h"),
+      label = "alleles thresholds",
+      circle = FALSE,
+      status = "btn-dark",
+      size = "sm"
+    ))
+
   ),
   mainPanel(tabsetPanel(id = "tabs"))
 )
 
-library(htmlwidgets)
+
+
 
 server <- function(input, output, session) {
+  input_vals <-
+    reactiveValues(
+      tabs_count = 0,
+      g_group = "IGHV1-3G4",
+      g = allele_db %>% dplyr::filter(gene_group == "IGHV1-3G4") %>% pull(gene) %>% unique(),
+      v_gene_cut = "IGHV1-3G4",
+      allele_thresh = NULL,
+      allele_thresh_names = NULL
+    )
+  allele_num <- reactiveValues(len = 0)
+  a_thresh <- reactiveValues(a_thresh = NULL)
 
-
-
-  input_vals <- reactiveValues(tabs_count = 0, g_group = "IGHV1-46G6", g = allele_db %>% filter(gene_group == "IGHV1-46G6") %>% pull(gene) %>% unique(), v_gene_cut = "IGHV1-46G6", allele_thresh = NULL)
-  query <- eventReactive(session$clientData$url_search,{
-     parseQueryString(session$clientData$url_search)
+  query <- eventReactive(session$clientData$url_search, {
+    parseQueryString(session$clientData$url_search)
   })
 
   observeEvent(query()$g_group, {
-    if(!is.null(query()$g_group)){
+    if (!is.null(query()$g_group)) {
       print(query()$g_group)
       g_group <- strsplit(query()$g_group, "\"")[[1]][2]
       g <-
-        allele_db %>% filter(gene_group == g_group) %>% pull(gene) %>% unique()
+        allele_db %>% dplyr::filter(gene_group == g_group) %>% pull(gene) %>% unique()
       v_gene_cut <-
         ifelse(grepl("G", g_group), g_group, func_groups[as.character(g_group)])
       input_vals$g_group <- g_group
@@ -122,84 +150,144 @@ server <- function(input, output, session) {
 
 
   tmp_allele_db =
-    reactive({ allele_db %>% dplyr::filter(grepl(as.character(input_vals$g_group), new_allele)) %>%
-    dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+    reactive({
+      allele_db %>% dplyr::filter(grepl(as.character(input_vals$g_group), new_allele)) %>%
+        dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
     })
 
-  or_allele =reactive({
-
-    or_allele <- setNames(gsub(chain, "", as.character(tmp_allele_db()$or_allele)), as.character(gsub(
-      paste0(input_vals$g_group, "[*]"),
-      "",
-      tmp_allele_db()$new_allele
-    )))
+  or_allele = reactive({
+    or_allele <-
+      setNames(gsub(chain, "", as.character(tmp_allele_db()$or_allele)), as.character(gsub(
+        paste0(input_vals$g_group, "[*]"),
+        "",
+        tmp_allele_db()$new_allele
+      )))
 
   })
 
+
   data_cut <- reactive({
-      tmp <- data %>%
+    tmp <- data %>%
       dplyr::filter(v_gene == input_vals$v_gene_cut,
                     !is.na(v_allele),
                     group_plot == 1) %>%
       dplyr::ungroup() %>% dplyr::mutate(v_allele_axis = or_allele()[v_allele])
 
-      input_vals$allele_thresh <- setNames(rep(0.5, length(unique(tmp$v_allele_axis))),unique(tmp$v_allele_axis))
 
-      return(tmp)
+
+    input_vals$allele_thresh <-
+      setNames(rep(0.5, length(unique(
+        tmp$v_allele_axis
+      ))), unique(tmp$v_allele_axis))
+
+    return(tmp)
 
   })
 
-  observeEvent(query()$allele_thresh,{
-    if(!is.null(query()$allele_thresh)){
+
+
+
+  observeEvent(query()$allele_thresh, {
+    if (!is.null(query()$allele_thresh)) {
       allele_thresh <-
         strsplit(query()$allele_thresh, "\"")[[1]][2]
-      allele_thresh <- strsplit(allele_thresh,"b")[[1]]
-      allele_thresh_names <- sapply(strsplit(allele_thresh,"q"),"[[",1)
-      allele_thresh <- setNames(as.numeric(sapply(strsplit(allele_thresh,"q"),"[[",2)),allele_thresh_names)
-      names_missing <- unique(data_cut()$v_allele_axis)[!unique(data_cut()$v_allele_axis) %in% allele_thresh_names]
-      if(length(names_missing)!=0) allele_thresh <- c(allele_thresh, setNames(rep(0.5, length(names_missing)), names_missing))
-      names_over <- unique(allele_thresh_names)[!allele_thresh_names %in% unique(data_cut()$v_allele_axis)]
-      if(length(names_over)!=0) allele_thresh <- allele_thresh[! names(allele_thresh) %in% names_over]
+      allele_thresh <- strsplit(allele_thresh, "b")[[1]]
+      allele_thresh_names <-
+        sapply(strsplit(allele_thresh, "q"), "[[", 1)
+      allele_thresh <-
+        setNames(as.numeric(sapply(
+          strsplit(allele_thresh, "q"), "[[", 2
+        )), allele_thresh_names)
+      names_missing <-
+        unique(data_cut()$v_allele_axis)[!unique(data_cut()$v_allele_axis) %in% allele_thresh_names]
+      if (length(names_missing) != 0)
+        allele_thresh <-
+        c(allele_thresh, setNames(rep(0.5, length(
+          names_missing
+        )), names_missing))
+      names_over <-
+        unique(allele_thresh_names)[!allele_thresh_names %in% unique(data_cut()$v_allele_axis)]
+      if (length(names_over) != 0)
+        allele_thresh <-
+        allele_thresh[!names(allele_thresh) %in% names_over]
       input_vals$allele_thresh <- allele_thresh
     }
   })
 
+
+
   output$thresh <-
     renderUI({
-      #req(input_vals$tabs_count<1)
-      a_thresh <- isolate(input_vals$allele_thresh)
+      a_thresh$a_thresh <- input_vals$allele_thresh
+      input_vals$allele_thresh_names <-
+        setNames(paste0("allele", 1:length(unique(
+          data_cut()$v_allele_axis
+        ))),
+        names(reactiveValuesToList(input_vals)$allele_thresh))
+      allele_num$len <- length(unique(data_cut()$v_allele_axis))
+      div(class = "dynamicSI",
+          lapply(1:length(unique(
+            data_cut()$v_allele_axis
+          )), function(i) {
+            lab <- unique(data_cut()$v_allele_axis)[i]
+            val <- as.numeric(input_vals$allele_thresh[lab])
+            numericInput(
+              inputId = paste0("allele", i),
+              label = lab,
+              value = val,
+              min = 0.5,
+              max = 20,
+              step = 0.1
+            )
+          }))
+
+      #lab <- unique(data_cut()$v_allele_axis)[1]
+      #val <- as.numeric(a_thresh[lab])
+      #numericInput(inputId = "dat", label = "dfkjs", value = 0.5, min = 0.5, max = 20, step = 0.1)
+    })
+
+  outputOptions(output, "thresh", suspendWhenHidden = FALSE)#, priority = 20)
 
 
-      lapply(1:length(unique(data_cut()$v_allele_axis)), function(i){
-          lab <- unique(data_cut()$v_allele_axis)[i]
 
-          val <- as.numeric(input_vals$allele_thresh[lab])
-          print(a_thresh)
-          numericInput(inputId = paste0("allele",i), label = lab,value = val, min = 0.5, max = 20, step = 0.1)
-        }
-      )
-    #lab <- unique(data_cut()$v_allele_axis)[1]
-    #val <- as.numeric(a_thresh[lab])
-    #numericInput(inputId = "dat", label = "dfkjs", value = 0.5, min = 0.5, max = 20, step = 0.1)
+  observeEvent(input$lastSelectId, once = F, {
+    vals <- reactiveValuesToList(input)
+    vals <- vals[grep("allele[0-9]", names(vals))]
+    names_ <- reactiveValuesToList(input_vals)$allele_thresh
+    names_input <-
+      reactiveValuesToList(input_vals)$allele_thresh_names
+    print(names_input)
+    for (x in 1:length(vals)) {
+      a_names = names(names_)[x]
+
+      a_thresh$a_thresh[a_names] <-
+        as.numeric(vals[[names_input[a_names]]])
+    }
+    print(a_thresh$a_thresh)
+    # lapply(1:length(isolate(a_thresh$a_thresh)), function(id){
+    #     observeEvent(input[[paste0("allele",id)]],{
+    #       a_names = names(isolate(input_vals$allele_thresh))[id]
+    #       a_thresh_vlues = ifelse(is.null(input[[paste0("allele",id)]]),0.5,input[[paste0("allele",id)]])
+    #
+    #       a_thresh$a_thresh[a_names] <- a_thresh_vlues
+    #     })
+    #   })
+  })
+  observe({
+    input$lastSelect
+
+    if (!is.null(input$lastSelectId)) {
+      cat("lastSelectId:", input$lastSelectId, "\n")
+      cat("Selection:", input[[input$lastSelectId]], "\n\n")
+    }
   })
 
-  outputOptions(output, "thresh", suspendWhenHidden=FALSE, priority = 10)
-
-  a_thresh <- reactiveValues(a_thresh=NULL)
-
-  observeEvent(input$allele1,{
-    a_names = isolate(input_vals$allele_thresh)
-
-    a_thres_vlues = sapply(1:length(input_vals$allele_thresh), function(x) input[[paste0("allele",x)]])
-    names(a_thres_vlues) <- names(input_vals$allele_thresh)
-
-    a_thresh$a_thresh <- a_thres_vlues
-  })
-
-  data_gene <- eventReactive(input$allele1,{
+  #observeEvent(, once = F,{
+  data_gene <- eventReactive(a_thresh$a_thresh, {
     tmp <- isolate(data_cut())
-    print( a_thresh$a_thresh)
-    tmp <- tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis]/100)
+    tmp <-
+      tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
+                                                            100)
     tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
       dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
         zygousity_state = as.numeric(length(unique(v_allele))),
@@ -207,407 +295,514 @@ server <- function(input, output, session) {
         v_alleles_abc = paste0(sort(or_allele()[v_allele[1:unique(zygousity_state)]]), collapse = ";")
       ) %>% arrange(subject)
     tmp <- tmp %>% dplyr::group_by(subject, zygousity_state) %>%
-      dplyr::mutate(loc_state = loc <= zygousity_state) %>% filter(loc_state) %>% ungroup()
+      dplyr::mutate(loc_state = loc <= zygousity_state) %>% dplyr::filter(loc_state) %>% ungroup()
 
-    # tmp <-
-    #   tmp %>% dplyr::group_by(subject) %>% dplyr::arrange(desc(freq)) %>%
-    #   dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
-    #     zygousity_state = as.numeric(sum(
-    #       freq > allele_thresh[v_allele] / 100, na.rm = T
-    #     )),
-    #     v_alleles = paste0(1:unique(zygousity_state), " - ", or_allele()[v_allele[1:unique(zygousity_state)]], collapse = ";"),
-    #     v_alleles_abc = paste0(sort(or_allele()[v_allele[1:unique(zygousity_state)]]), collapse = ";"),
-    #     v_allele_axis = or_allele()[v_allele]
-    #   ) %>% arrange(subject)
-    # tmp <-
-    #   tmp %>% dplyr::group_by(subject, zygousity_state, group_plot) %>%
-    #   dplyr::mutate(loc_state = loc <= zygousity_state) %>% dplyr::filter(loc_state) %>% ungroup()
     return(tmp)
+  })
 
-
+  #})
+  plt_data_het = eventReactive(input$hetro, {
+    #req(data_gene())
+    tmp_plot <- isolate(data_gene())
+    if (input$hetro) {
+      tmp_plot <- tmp_plot %>% dplyr::filter(J6 == 1)
+    } else{
+      tmp_plot <- tmp_plot
+    }
+    return(tmp_plot)
   })
 
   observe({
     req(data_gene())
-    states <- sort(as.numeric(isolate(unique(data_gene()$zygousity_state))))
+    states <- sort(as.numeric(unique(data_gene()$zygousity_state)))
 
 
 
-    if(input_vals$tabs_count<1){
+    if (input_vals$tabs_count < 1) {
       input_vals$tabs_count <- 1
       lapply(states, function(i) {
-        insertTab(inputId = "tabs",
-                  tabPanel(
-                    paste0("State ", i),
-                    plotlyOutput(paste0('scatter', i)),
-                    br(),
-                    br(),
-                    br(),
-                    plotlyOutput(paste0('hover', i))
+        insertTab(
+          session = session,
+          inputId = "tabs",
+          tabPanel(
+            title = paste0("State ", i),
+            plotlyOutput(paste0('scatter', i)),
+            br(),
+            br(),
+            br(),
+            plotlyOutput(paste0('hover', i))
 
-                  ))
+          )
+        )
       })
 
-  }
+    }
 
-  updateTabsetPanel(session = session, inputId = "tabs", selected = paste0("State ", states[1]))
+    updateTabsetPanel(
+      session = session,
+      inputId = "tabs",
+      selected = paste0("State ", states[1])
+    )
+
+    Map(function(state) {
+      state_val <- reactiveValues(i = as.numeric(state))
 
 
-  Map(function(state){
-    state_val <- reactiveValues(i = as.numeric(state))
+      plt_data = eventReactive(input$hetro, {
+        req(plt_data_het())
+        req((input$hetro == T | input$hetro == F))
+        print(unique(plt_data_het()$subject))
+        tmp_plot <-  isolate(plt_data_het()) %>%
+          dplyr::filter(zygousity_state == as.numeric(state_val$i),
+                        is.na(j_call)) %>% ungroup() %>% dplyr::rowwise() %>% dplyr::mutate(
+                          v_alleles_p = v_alleles_abc,
+                          v_alleles_p = gsub(";", "\n", v_alleles_p),
+                          text = HTML(
+                            paste(
+                              '</br>Project: ',
+                              project,
+                              '</br>Subject: ',
+                              subject,
+                              '</br>Alleles: ',
+                              v_alleles,
+                              '</br># assignments: ',
+                              count,
+                              '</br>Relative freq.: ',
+                              round(freq, 4),
+                              '</br>Relative Rep. freq.: ',
+                              round(freq2, 4),
+                              '</br>',
+                              J6_TAG
+                            )
+                          )
+                        ) %>% ungroup()
 
-    plt_data = reactive({
-      tmp_plot <-  data_gene() %>%
-        dplyr::filter(zygousity_state == as.numeric(isolate(state_val$i)), is.na(j_call)) %>% ungroup() %>% dplyr::rowwise() %>% dplyr::mutate(
-          v_alleles_p = v_alleles_abc,
-          v_alleles_p = gsub(";", "\n", v_alleles_p),
-          text = HTML(
-            paste(
-              '</br>Project: ',
-              project,
-              '</br>Subject: ',
-              subject,
-              '</br>Alleles: ',
-              v_alleles,
-              '</br># assignments: ',
-              count,
-              '</br>Relative freq.: ',
-              round(freq, 4),
-              '</br>Relative Rep. freq.: ',
-              round(freq2, 4),
-              '</br>',
-              J6_TAG
-            )
+
+
+
+        return(tmp_plot)
+      })
+      # plt_data_haplo <- reactive({
+      #   tmp_haplo <- data %>%
+      #     dplyr::filter(v_gene == input_vals$v_gene_cut,
+      #                   !is.na(v_allele),
+      #                   group_plot == 2) %>%
+      #     ungroup()
+      #
+      #   tmp_haplo <- tmp_haplo %>% dplyr::group_by(subject) %>%
+      #     dplyr::filter(v_allele %in% plt_data()$v_allele[plt_data()$subject ==
+      #                                                       unique(subject)]) %>%
+      #     dplyr::mutate(
+      #       v_alleles_p = unique(plt_data()$v_alleles_p[plt_data()$subject ==
+      #                                                     unique(subject)]),
+      #       v_allele_axis = or_allele()[v_allele]
+      #     )
+      #   return(tmp_haplo)
+      # })
+
+      colors <- eventReactive(plt_data(), {
+        n_alleles <- length(unique(plt_data()$v_alleles_p))
+        if (n_alleles <= 4)
+          setNames(cols[1:n_alleles], unique(plt_data()$v_alleles_p))
+        else
+          setNames(pal %>% usecol(n = n_alleles),
+                   unique(plt_data()$v_alleles_p))
+      })
+
+      plt_data_haplo <- reactiveValues(db = NULL)
+
+      filteredScores <- eventReactive(plt_data(), {
+        req((input$hetro == T | input$hetro == F))
+        tmp <- isolate(data_cut())
+        tmp <-
+          tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
+                                                                100)
+        tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
+          dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
+            zygousity_state = as.numeric(length(unique(v_allele))),
+            v_alleles = paste0(1:unique(zygousity_state), " - ", or_allele()[v_allele[1:unique(zygousity_state)]], collapse = ";"),
+            v_alleles_abc = paste0(sort(or_allele()[v_allele[1:unique(zygousity_state)]]), collapse = ";")
+          ) %>% arrange(subject)
+        tmp <- tmp %>% dplyr::group_by(subject, zygousity_state) %>%
+          dplyr::mutate(loc_state = loc <= zygousity_state) %>% dplyr::filter(loc_state) %>% ungroup()
+
+        if (input$hetro) {
+          tmp <- tmp %>% dplyr::filter(J6 == 1)
+        } else{
+          tmp <- tmp
+        }
+        plot_data <-  tmp %>%
+          dplyr::filter(zygousity_state == as.numeric(state_val$i),
+                        is.na(j_call)) %>% ungroup() %>% dplyr::rowwise() %>% dplyr::mutate(
+                          v_alleles_p = v_alleles_abc,
+                          v_alleles_p = gsub(";", "\n", v_alleles_p),
+                          text = HTML(
+                            paste(
+                              '</br>Project: ',
+                              project,
+                              '</br>Subject: ',
+                              subject,
+                              '</br>Alleles: ',
+                              v_alleles,
+                              '</br># assignments: ',
+                              count,
+                              '</br>Relative freq.: ',
+                              round(freq, 4),
+                              '</br>Relative Rep. freq.: ',
+                              round(freq2, 4),
+                              '</br>',
+                              J6_TAG
+                            )
+                          )
+                        ) %>% ungroup()
+
+
+        tmp_haplo <- data %>%
+          dplyr::filter(v_gene == input_vals$v_gene_cut,
+                        !is.na(v_allele),
+                        group_plot == 2) %>%
+          ungroup()
+
+        tmp_haplo <- tmp_haplo %>% dplyr::group_by(subject) %>%
+          dplyr::filter(v_allele %in% plot_data$v_allele[plot_data$subject ==
+                                                            unique(subject)]) %>%
+          dplyr::mutate(
+            v_alleles_p = unique(plot_data$v_alleles_p[plot_data$subject ==
+                                                          unique(subject)]),
+            v_allele_axis = or_allele()[v_allele]
           )
-        ) %>% ungroup()
 
-      return(tmp_plot)
-    })
+        plt_data_haplo$db <- plot_data
+        shiny:::flushReact()
+        #plot_data <- plt_data()
 
-    plt_data_haplo <- reactive({
-      tmp_haplo <- data %>%
-        dplyr::filter(v_gene == input_vals$v_gene_cut,
-                      !is.na(v_allele),
-                      group_plot == 2) %>%
-        ungroup()
+        loc2 <-
+          setNames(1:length(unique(plot_data$v_allele_axis)), sort(unique(plot_data$v_allele_axis)))
 
-      tmp_haplo <- tmp_haplo %>% dplyr::group_by(subject) %>%
-        dplyr::filter(v_allele %in% plt_data()$v_allele[plt_data()$subject ==
-                                                          unique(subject)]) %>%
-        dplyr::mutate(v_alleles_p = unique(plt_data()$v_alleles_p[plt_data()$subject ==
-                                                                    unique(subject)]),
-                      v_allele_axis = or_allele()[v_allele])
-      return(tmp_haplo)
-    })
+        plot_data$loc2 <- loc2[plot_data$v_allele_axis]
 
-    colors <- reactive({
-      n_alleles <- length(unique(plt_data()$v_alleles_p))
-      if (n_alleles <= 4)
-        setNames(cols[1:n_alleles], unique(plt_data()$v_alleles_p))
-      else
-        setNames(pal %>% usecol(n = n_alleles),
-                 unique(plt_data()$v_alleles_p))
-    })
+        if (state_val$i != 1 &
+            length(unique(plot_data$v_alleles_p)) != 1) {
+          loc_jitter <- list()
+          for (ii in 1:length(unique(plot_data$loc2))) {
+            loc_c <- as.character(unique(plot_data$loc2)[ii])
+            loc_jitter[[loc_c]] <-
+              seq(0, 0.5, length.out = length(unique(plot_data$v_alleles_p[plot_data$loc2 ==
+                                                                             unique(plot_data$loc2)[ii]])))
 
-    output[[paste0("scatter",as.numeric(isolate(state_val$i)))]] <- renderPlotly({
+            loc_jitter[[loc_c]]  <-
+              setNames(loc_jitter[[loc_c]] , sort(unique(plot_data$v_alleles_p[plot_data$loc2 ==
+                                                                                 unique(plot_data$loc2)[ii]])))
+          }
 
-      plot_data <- isolate(plt_data())
 
-      loc2 <-
-        setNames(1:length(unique(plot_data$v_allele_axis)), sort(unique(plot_data$v_allele_axis)))
+          plot_data <-
+            plot_data %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>%
+            dplyr::mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p], ) %>% ungroup()
 
-      plot_data$loc2 <- loc2[plot_data$v_allele_axis]
+          if (length(plot_data$loc_plot))
+            plot_data <-
+            plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 1))
+        } else{
+          plot_data <-
+            plot_data %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>%
+            dplyr::mutate(loc_plot = loc2, ) %>% ungroup()
+          if (length(plot_data$loc_plot))
+            plot_data <-
+              plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 1))
+        }
 
-      if (isolate(state_val$i) != 1 &
-          length(unique(plot_data$v_alleles_p)) != 1) {
-        loc_jitter <- list()
-        for (ii in 1:length(unique(plot_data$loc2))) {
-          loc_c <- as.character(unique(plot_data$loc2)[ii])
-          loc_jitter[[loc_c]] <-
-            seq(0, 0.5, length.out = length(unique(plot_data$v_alleles_p[plot_data$loc2 ==
-                                                                           unique(plot_data$loc2)[ii]])))
+        tickvals_tmp <-
+          plot_data %>% dplyr::pull(loc_plot) %>% unique() %>% sort()
 
-          loc_jitter[[loc_c]]  <-
-            setNames(loc_jitter[[loc_c]] , sort(unique(plot_data$v_alleles_p[plot_data$loc2 ==
-                                                                               unique(plot_data$loc2)[ii]])))
+        tickvals <- c()
+
+        for (i in 1:length(loc2)) {
+          tickvals <-
+            c(tickvals, mean(tickvals_tmp[floor(tickvals_tmp) == i]))
         }
 
 
-        plot_data <-
-          plot_data %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>%
-          dplyr::mutate(loc_plot = loc2 + loc_jitter[[as.character(unique(loc2))]][v_alleles_p], ) %>% ungroup()
-
-        if (length(plot_data$loc_plot))
-          plot_data <-
-          plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 1))
-      } else{
-        plot_data <-
-          plot_data %>% dplyr::arrange(loc2, v_alleles_p) %>% dplyr::group_by(loc2) %>%
-          dplyr::mutate(loc_plot = loc2, ) %>% ungroup()
-        if (length(plot_data$loc_plot))
-          plot_data <-
-            plot_data %>% dplyr::mutate(jitter_offset = jitter(loc_plot, factor = 1))
-      }
-
-      tickvals_tmp <-
-        plot_data %>% dplyr::pull(loc_plot) %>% unique() %>% sort()
-
-      tickvals <- c()
-
-      for (i in 1:length(loc2)) {
-        tickvals <-
-          c(tickvals, mean(tickvals_tmp[floor(tickvals_tmp) == i]))
-      }
+        ticktext <-
+          plot_data %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
 
 
-      ticktext <-
-        plot_data %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
+        plot_data <- plot_data %>%
+          highlight_key(., ~ subject)
+
+        #a_names = isolate(input_vals$allele_thresh)
+
+        #a_thresh = sapply(1:length(input_vals$allele_thresh), function(x) input[[paste0("allele",x)]])
+        #names(a_thresh) <- names(input_vals$allele_thresh)
+        vals <- reactiveValuesToList(a_thresh)$a_thresh
+        allele_thresh_state <- vals[names(vals) %in% names(loc2)]
+        colors_line <-
+          setNames(c("red", "green", "blue", "purple", "black"),
+                   unique(allele_thresh_state))
+        print(vals)
+
+        plotly1 <-
+          plot_data %>%
+          plotly::plot_ly(colors = colors()) %>%
+          plotly::add_trace(
+            type = "scatter",
+            x = ~ (jitter_offset),
+            y = ~ freq,
+            text = ~ text,
+            symbol = ~ project,
+            mode = 'markers',
+            marker = list(color = "grey", size = 12),
+            showlegend = TRUE,
+            opacity = 0.9,
+            hoverinfo = 'text',
+            legendgroup = ~ project
+          ) %>%
+          plotly::add_trace(
+            type = "scatter",
+            x = ~ (jitter_offset),
+            y = ~ freq,
+            text = ~ text,
+            color = ~ v_alleles_p,
+            colors = colors(),
+            mode = 'markers',
+            showlegend = FALSE,
+            opacity = 0.8,
+            hoverinfo = 'none',
+            legendgroup = ~ v_alleles_p
+          ) %>%
+          plotly::add_trace(
+            x = ~ as.numeric(loc_plot),
+            y = ~ freq,
+            color = ~ v_alleles_p,
+            colors = colors(),
+            type = "box",
+            hoverinfo = "none",
+            showlegend = FALSE,
+            fillcolor = "transparent",
+            name = ~ v_alleles_p,
+            legendgroup = ~ v_alleles_p
+          ) %>%
+          plotly::layout(
+            hovermode = 'closest',
+            shapes = lapply(1:length(names(
+              allele_thresh_state
+            )), function(ia) {
+              a = names(allele_thresh_state)[ia]
+              xx = tickvals
+              hline(
+                unname(allele_thresh_state[a]) / 100,
+                x0 = xx[ia] -
+                  0.25,
+                x1 = xx[ia] + 0.25,
+                color = colors_line[as.character(allele_thresh_state[a])]
+              )
+            }),
+            legend = list(
+              tracegroupgap = 20,
+              title = list(text =
+                             '<b>  </b>'),
+              orientation = "V"
+            ),
+            xaxis = list(
+              title = paste0(input_vals$g, " Alleles"),
+              autotick = F,
+              tickmode = "array",
+              tickvals = tickvals,
+              ticktext = ticktext
+            ),
+            yaxis = list(title = "Relative allele freq.",
+                         range = c(0, 1.05))
+          )
 
 
-      if (input$hetro){
-        plot_data <- plot_data %>% filter(J6 == 1)
-      }
+        plotly2 <-
+          plot_data %>%
+          plotly::plot_ly(colors = colors()) %>%
+          plotly::add_trace(
+            type = "scatter",
+            x = ~ (jitter_offset),
+            y = ~ freq2,
+            text = ~ text,
+            symbol = ~ project,
+            mode = 'markers',
+            marker = list(color = "grey", size = 12),
+            showlegend = FALSE,
+            opacity = 0.9,
+            hoverinfo = 'text',
+            legendgroup = ~ project
+          ) %>%
+          plotly::add_trace(
+            type = "scatter",
+            x = ~ (jitter_offset),
+            y = ~ freq2,
+            text = ~ text,
+            color = ~ v_alleles_p,
+            colors = colors(),
+            mode = 'markers',
+            showlegend = FALSE,
+            opacity = 0.8,
+            hoverinfo = 'none',
+            legendgroup = ~ v_alleles_p
+          ) %>%
+          plotly::add_trace(
+            x = ~ as.numeric(loc_plot),
+            y = ~ freq2,
+            color = ~ v_alleles_p,
+            colors = colors(),
+            type = "box",
+            hoverinfo = "none",
+            fillcolor = "transparent",
+            showlegend = FALSE,
+            name = ~ v_alleles_p,
+            legendgroup = ~ v_alleles_p
+          ) %>%
+          plotly::layout(
+            hovermode = 'closest',
+            #shapes = list(hline(input_vals$allele_thresh / 100)),
+            legend = list(
+              tracegroupgap = 20,
+              title = list(text =
+                             '<b>  </b>'),
+              orientation = "V"
+            ),
+            xaxis = list(
+              title = paste0(input_vals$g, " Alleles"),
+              autotick = F,
+              tickmode = "array",
+              tickvals = tickvals,
+              ticktext = ticktext
+            ),
+            yaxis = list(title = "Relative rep. freq.")
+            #,range = c(0, 0.5))
+          )
 
-      plot_data <- plot_data %>%
-        highlight_key(., ~ subject)
-
-      #a_names = isolate(input_vals$allele_thresh)
-
-      #a_thresh = sapply(1:length(input_vals$allele_thresh), function(x) input[[paste0("allele",x)]])
-      #names(a_thresh) <- names(input_vals$allele_thresh)
-
-      allele_thresh_state <- isolate(a_thresh$a_thresh[names(a_thresh$a_thresh) %in% names(loc2)])
-      colors_line <- setNames(c("red","green","blue","purple","black"), unique(allele_thresh_state))
-
-      plotly1 <-
-        plot_data %>%
-        plot_ly(colors = colors()) %>%
-        add_trace(
-          type = "scatter",
-          x = ~ (jitter_offset),
-          y = ~ freq,
-          text = ~ text,
-          symbol = ~ project,
-          mode = 'markers',
-          marker = list(color = "grey", size = 12),
-          showlegend = TRUE,
-          opacity = 0.9,
-          hoverinfo = 'text',
-          legendgroup = ~ project
-        ) %>%
-        add_trace(
-          type = "scatter",
-          x = ~ (jitter_offset),
-          y = ~ freq,
-          text = ~ text,
-          color = ~ v_alleles_p,
-          colors = colors(),
-          mode = 'markers',
-          showlegend = FALSE,
-          opacity = 0.8,
-          hoverinfo = 'none',
-          legendgroup = ~ v_alleles_p
-        ) %>%
-        add_trace(
-          x = ~ as.numeric(loc_plot),
-          y = ~ freq,
-          color = ~ v_alleles_p,
-          colors = colors(),
-          type = "box",
-          hoverinfo = "none",
-          showlegend = FALSE,
-          fillcolor = "transparent",
-          name = ~ v_alleles_p,
-          legendgroup = ~ v_alleles_p
-        ) %>%
-        layout(
-          hovermode = 'closest',
-          shapes = lapply(1:length(names(allele_thresh_state)), function(ia){a = names(allele_thresh_state)[ia]; xx = tickvals; hline(unname(allele_thresh_state[a])/100,
-                                                                                                                          x0 = xx[ia]-0.25, x1 = xx[ia]+0.25,
-                                                                                                                          color = colors_line[as.character(allele_thresh_state[a])])}),
+        s <- plotly::subplot(
+          plotly1,
+          plotly2,
+          nrows = 2,
+          shareY = T,
+          titleX = F,
+          titleY = T,
+          shareX = T,
+          margin = 0.1,
+          which_layout = 1
+        ) %>% plotly::layout(
           legend = list(
-            tracegroupgap = 20,
-            title = list(text =
-                           '<b>  </b>'),
-            orientation = "V"
+            orientation = 'h',
+            y = -0.2,
+            x = 0
           ),
           xaxis = list(
-            title = paste0(input_vals$g, " Alleles"),
-            autotick = F,
-            tickmode = "array",
-            tickvals = tickvals,
-            ticktext = ticktext
+            titlefont = list(size = 18),
+            tickfont = list(size = 18)
           ),
-          yaxis = list(title = "Relative allele freq.",
-                       range = c(0, 1.05))
-        )
-
-
-      plotly2 <-
-        plot_data %>%
-        plot_ly(colors = colors()) %>%
-        add_trace(
-          type = "scatter",
-          x = ~ (jitter_offset),
-          y = ~ freq2,
-          text = ~ text,
-          symbol = ~ project,
-          mode = 'markers',
-          marker = list(color = "grey", size = 12),
-          showlegend = FALSE,
-          opacity = 0.9,
-          hoverinfo = 'text',
-          legendgroup = ~ project
-        ) %>%
-        add_trace(
-          type = "scatter",
-          x = ~ (jitter_offset),
-          y = ~ freq2,
-          text = ~ text,
-          color = ~ v_alleles_p,
-          colors = colors(),
-          mode = 'markers',
-          showlegend = FALSE,
-          opacity = 0.8,
-          hoverinfo = 'none',
-          legendgroup = ~ v_alleles_p
-        ) %>%
-        add_trace(
-          x = ~ as.numeric(loc_plot),
-          y = ~ freq2,
-          color = ~ v_alleles_p,
-          colors = colors(),
-          type = "box",
-          hoverinfo = "none",
-          fillcolor = "transparent",
-          showlegend = FALSE,
-          name = ~ v_alleles_p,
-          legendgroup = ~ v_alleles_p
-        ) %>%
-        layout(
-          hovermode = 'closest',
-          #shapes = list(hline(input_vals$allele_thresh / 100)),
-          legend = list(
-            tracegroupgap = 20,
-            title = list(text =
-                           '<b>  </b>'),
-            orientation = "V"
+          yaxis = list(
+            titlefont = list(size = 18),
+            tickfont = list(size = 18)
           ),
-          xaxis = list(
-            title = paste0(input_vals$g, " Alleles"),
-            autotick = F,
-            tickmode = "array",
-            tickvals = tickvals,
-            ticktext = ticktext
+          yaxis2 = list(
+            titlefont = list(size = 18),
+            tickfont = list(size = 18)
           ),
-          yaxis = list(title = "Relative rep. freq.")
-                       #,range = c(0, 0.5))
+          legend = list(font = list(size = 12)),
+          hoverlabel = list(bgcolor = 'rgba(255,255,255,0.75)',
+                            font = list(color = 'black'))
+        )  %>%
+          plotly::highlight(
+            on = "plotly_click",
+            opacityDim = 0.3,
+            #selectize = TRUE,
+            selected = attrs_selected(showlegend = F),
+            persistent = T
+          )
+
+        s$x$source <- paste0("scatter", as.numeric(state_val$i))
+
+        return(
+          #onRender(
+            s %>%
+              plotly::event_register('plotly_click') %>% plotly::config(displayModeBar = F, #edits = list(shapePosition = TRUE),
+                                                                        scrollZoom = FALSE)
+        #     "function (el, x) {
+        #
+        #   // Get selectized search widget
+        #   s = $('select')[0].selectize;
+        #
+        #   // Update placeholder
+        #   s.settings.placeholder = 'Select a subject';
+        #   s.updatePlaceholder();
+        #
+        #   // Hide group name (random string) that would appear above placeholder
+        #   $('#htmlwidget_container').find('label').css('display', 'none');
+        #
+        #
+        # }"
+        #   )
         )
+      })
+      output[[paste0("scatter", as.numeric(state_val$i))]] <-
+        renderPlotly({
+          filteredScores()
+        })
 
-      s <- subplot(
-        plotly1,
-        plotly2,
-        nrows = 2,
-        shareY = T,
-        titleX = F,
-        titleY = T,
-        shareX = T,
-        margin = 0.1,
-        which_layout = 1
-      ) %>% layout(
-        legend = list(orientation = 'h', y = -0.2, x = 0),
-        xaxis = list(
-          titlefont = list(size = 18),
-          tickfont = list(size = 18)
-        ),
-        yaxis = list(
-          titlefont = list(size = 18),
-          tickfont = list(size = 18)
-        ),
-        yaxis2 = list(
-          titlefont = list(size = 18),
-          tickfont = list(size = 18)
-        ),
-        legend = list(font = list(size = 12)),
-        hoverlabel=list(bgcolor='rgba(255,255,255,0.75)', font=list(color='black'))
-      )  %>%
-        plotly::highlight(on = "plotly_click",
-                          opacityDim = 0.3,
-                          selectize = TRUE,
-                          selected = attrs_selected(showlegend = F),
-                          persistent = T)
+      #.update x/y reactive values in response to changes in shape anchors
+      # observe({
+      #   ed <- event_data("plotly_relayout", source=paste0("scatter", as.numeric(isolate(state_val$i))))
+      #   shape_anchors <- ed[grepl("^shapes", names(ed))]
+      #   if (length(shape_anchors) != 4) return()
+      #   row_index <- unique(readr::parse_number(names(shape_anchors)) + 1)
+      #   pts <- as.numeric(shape_anchors)
+      #   a_thresh$a_thresh[row_index] <- pts[3]
+      # })
+      observeEvent(input$hetro, once = F, {
+        output[[paste0("hover", as.numeric(state_val$i))]] <- renderPlotly({
+          eventdat <-
+            event_data('plotly_click', source = paste0("scatter", as.numeric(state_val$i))) # get event data from source main
 
-      s$x$source <- paste0("scatter", as.numeric(isolate(state_val$i)))
+          validate(need(
+            !is.null(eventdat),
+            "Please choose a J6 heterozygouse sample"
+          ))
 
-      onRender(
-        s %>%
-          event_register('plotly_click') %>% config(displayModeBar = F, #edits = list(shapePosition = TRUE),
-                                                    scrollZoom = FALSE),
-        "function (el, x) {
+          eventdat <- eventdat[nrow(eventdat),]
+          subject_key <-
+            eventdat[['key']] # Index of the data point being charted
 
-          // Get selectized search widget
-          s = $('select')[0].selectize;
+          plot_bar <- isolate(plt_data_haplo$db)
 
-          // Update placeholder
-          s.settings.placeholder = 'Select a subject';
-          s.updatePlaceholder();
+          plot_bar <-
+            dplyr::filter(plot_bar,!is.na(j_call), subject == subject_key)
 
-          // Hide group name (random string) that would appear above placeholder
-          $('#htmlwidget_container').find('label').css('display', 'none');
+          validate(need(
+            nrow(plot_bar) > 0,
+            paste0(
+              "Sample ",
+              subject_key,
+              " doesn't have J6 sequences with the selected gene for this sample.\nPlease choose a different sample"
+            )
+          ))
 
-
-        }")
-
-    })
-
-    #.update x/y reactive values in response to changes in shape anchors
-    # observe({
-    #   ed <- event_data("plotly_relayout", source=paste0("scatter", as.numeric(isolate(state_val$i))))
-    #   shape_anchors <- ed[grepl("^shapes", names(ed))]
-    #   if (length(shape_anchors) != 4) return()
-    #   row_index <- unique(readr::parse_number(names(shape_anchors)) + 1)
-    #   pts <- as.numeric(shape_anchors)
-    #   a_thresh$a_thresh[row_index] <- pts[3]
-    # })
-
-    output[[paste0("hover",as.numeric(isolate(state_val$i)))]] <- renderPlotly({
-      eventdat <-
-        event_data('plotly_click', source = paste0("scatter", as.numeric(isolate(state_val$i)))) # get event data from source main
-
-      validate(need(
-        !is.null(eventdat),
-        "Please choose a J6 heterozygouse sample"
-      ))
-
-      eventdat <- eventdat[nrow(eventdat),]
-      subject_key <-
-        eventdat[['key']] # Index of the data point being charted
-
-      plot_bar <- isolate(plt_data_haplo())
-
-      plot_bar <-
-        dplyr::filter(plot_bar,!is.na(j_call), subject == subject_key)
-
-      validate(need(
-        nrow(plot_bar) > 0,
-        paste0(
-          "Sample ",
-          subject_key,
-          ' dont have J6 sequences with the selected gene for this sample.\nPlease choose a different sample'
-        )
-      ))
-
-      # draw plot according to the point number on hover
-
-      ggplotly(ggplot(plot_bar, aes(v_allele_axis, freq, fill = v_alleles_p)) +
-        geom_col(width = 0.2) + facet_grid(j_call ~ .) + theme_minimal(base_size = 12) +
-        labs(y = "Relative allele frequency", x = paste0(subject_key, " Alleles"), fill = "") + scale_y_continuous(limits = c(0,1)) +
-        scale_fill_manual(values = colors()[unique(plot_bar$v_alleles_p)]) + theme(legend.position = "none")) %>%
-        layout(showlegend = F) %>% config(displayModeBar = F)
-      #) %>% layout(
-      #  legend = list(orientation = 'h') ) %>% config(displayModeBar = F)
-    })
-  },states)
+          # draw plot according to the point number on hover
+          shiny:::flushReact()
+          plotly::ggplotly(
+            ggplot(
+              plot_bar,
+              aes(v_allele_axis, freq, fill = v_alleles_p)
+            ) +
+              geom_col(width = 0.2) + facet_grid(j_call ~ .) + theme_minimal(base_size = 12) +
+              labs(
+                y = "Relative allele frequency",
+                x = paste0(subject_key, " Alleles"),
+                fill = ""
+              ) + scale_y_continuous(limits = c(0, 1)) +
+              scale_fill_manual(values = colors()[unique(plot_bar$v_alleles_p)]) + theme(legend.position = "none")
+          ) %>%
+            plotly::layout(showlegend = F) %>% plotly::config(displayModeBar = F)
+          #) %>% layout(
+          #  legend = list(orientation = 'h') ) %>% config(displayModeBar = F)
+        })
+      })
+    }, states)
   })
 
   # observeEvent(req(any(a_thresh$a_thresh!=input_vals$allele_thresh)),{
@@ -622,17 +817,15 @@ server <- function(input, output, session) {
   #
   # })
 
-  observeEvent(input$reset_input, {
-
-    lapply(1:length(input_vals$allele_thresh), function(i){
+  observeEvent(input$reset_input, once = F, {
+    lapply(1:length(input_vals$allele_thresh), function(i) {
       lab <- names(input_vals$allele_thresh)[i]
 
       val <- as.numeric(input_vals$allele_thresh[lab])
 
-      updateNumericInput(session, paste0("allele",i), value = val)
+      updateNumericInput(session, paste0("allele", i), value = val)
 
-    }
-    )
+    })
 
   })
 
