@@ -16,7 +16,6 @@ sequence-depth-1
 cutoff-1
 observations-1
 conclusions-1
-allele-specific-cutoff-2-for-all-except-0.5-for-allele-05
 allele-specific-cutoff-5-for-all-except-0.5-for-allele-05
 ighv1-24---g3
 allele-appearnce-2
@@ -30,6 +29,7 @@ sequence-depth-3
 cutoff-2
 observations-3
 conclusions-3
+allele-specific-cutoff-5-for-alleles-0105-except-0.5-for-allele-05
 ighv1-45---g5
 allele-appearnce-4
 group-alignment-3
@@ -70,6 +70,7 @@ sequence-depth-9
 cutoff-7
 observations-9
 conclusions-9
+allele-specific-cutoff-5-for-all-alleles
 ighv2-26---g11
 allele-appearnce-10
 group-alignment-8

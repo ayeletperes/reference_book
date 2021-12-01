@@ -87,7 +87,7 @@ tmp <- data_cutoff(data, func_g_groups, g_group, allele_thresh, or_allele)
 
 ```
 
-With the selected cutoff we saw that there are `r length(unique(tmp %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
+With the selected cutoff we saw that there are `r length(unique(tmp %>% filter(is.na(j_call)) %>% arrange(zygousity_state) %>% pull(zygousity_state)))` zygousity states.
 
 ```{r eval=knitr::is_html_output(excludes = 'epub'), results = 'asis', echo = F}
 source_haplo_usage(g_group, allele_thresh)
@@ -97,7 +97,7 @@ source_haplo_usage(g_group, allele_thresh)
 
 This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`)
+You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`){target="_blank"}
 
 ```{r, message=F, echo=F, warning=F}
 knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group))
@@ -157,3 +157,49 @@ knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_grou
 ```
 
 ## Conclusions
+
+From the results we believe that the cutoff for this group should be closer to $5\%$ for alleles **01** and **05**, and for allele **04** it should stay at $0.5\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+
+### Allele specific cutoff: 5\% for alleles **01,05** except 0.5\% for allele **05**
+
+```{r}
+
+tmp_allele_db <-
+  allele_db %>% filter(grepl(func_groups[as.character(g)], new_allele)) %>%
+  dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+
+or_allele <-
+  setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
+    paste0(func_groups[as.character(g)], "[*]"),
+    "",
+    tmp_allele_db$new_allele
+  )))
+
+allele_thresh = setNames(rep(5,length(names(or_allele))),names(or_allele))
+allele_thresh["V1-3*04"]<-0.5
+
+tmp <- data_cutoff_allele_thresh(data, func_groups, g_group, allele_thresh, or_allele)
+
+```
+
+```{r, eval=knitr::is_html_output(excludes = "epub"), results = 'asis', echo = F}
+
+source_haplo_usage_specific(g_group,paste0(or_allele, "q", allele_thresh, collapse = "b"))
+```
+
+```{r}
+
+tableData <- tmp %>% dplyr::group_by(zygousity_state, v_allele) %>% dplyr::summarise(mean_freq = paste0(round(quantile(freq, 3/4),3),":", round(quantile(freq, 1/4),3)), v_alleles_abc = unique(v_alleles_abc)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(mean_freq, collapse = ";"))
+
+DT::datatable(
+        tableData,
+        options = list(dom = "tipr"),
+        selection = 'none',
+        colnames = c(
+          "Zygousity state" = "zygousity_state",
+          "V\nallele" = "v_alleles_abc",
+          "IQR range" = "fractions"
+        )
+      )
+
+```

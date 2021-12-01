@@ -60,7 +60,7 @@ For this group we've seen a single allele, hence the general summary statistics 
 
 This section is editable by clicking on the edit button below. To refresh the section click on the refresh button
 
-You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`)
+You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`){target="_blank"}
 
 ```{r, message=F, echo=F, warning=F}
 knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group))
