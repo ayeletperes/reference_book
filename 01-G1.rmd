@@ -100,7 +100,8 @@ This section is editable by clicking on the edit button below. To refresh the se
 You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]`){target="_blank"}
 
 ```{r, message=F, echo=F, warning=F}
-knitr::include_url(paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group))
+knitr::include_url("https://functionalgroupsnotes.wordpress.com/ighv1-18g1-notes", height = "1100px")
+#paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group)
 # Authenticate and save token for later use2
 # token <- drop_auth(rdstoken = "dropbox_token.rds")
 # 
