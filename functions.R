@@ -20,7 +20,7 @@ allele_appearance <- function(data_, g_group, allele_db){
   ggplot(data_ %>% filter(is.na(j_call)), aes(v_alleles2, fill = v_alleles2)) + 
     geom_bar() + facet_grid(.~project) + 
     labs(x = "allele", y = "# Individuals", fill = "") + 
-    bbplot::bbc_style()  + theme(legend.position = "right", 
+    bbplot::bbc_style()  + theme(legend.position = "bottom", 
                                  axis.text.x = element_text(size = 14, angle = 90, vjust = 0.5, hjust = 1)) + 
     scale_fill_manual(values = pal %>% usecol(n = n_alleles))
   
@@ -58,8 +58,9 @@ sequence_depth <- function(data_, g_group, allele_db){
     round(freq2, 4)
   )]
   
-  colors <- pal %>% usecol(n = n_alleles)
-  colors <- setNames(colors[1:length(unique(data_$project))],unique(data_$project))
+  colors <- pal %>% usecol(n = length(unique(data_$project)))
+  colors <- setNames(colors[1:length(unique(data_$project))],
+                     unique(data_$project))
   p_list <- lapply(unique(data_$project),function(p){
     g1 <- ggplot(data_[project==p], aes(v_alleles2, count, text = text)) + 
       geom_boxplot(outlier.shape=NA, color = colors[p]) +
@@ -501,21 +502,34 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   matrix_sequences <- as.data.frame(sapply(sequences,seqinr::s2c), stringsAsFactors = F)
   
   nucs <- nrow(matrix_sequences)-sum(apply(matrix_sequences, 1, function(x) all(x==".")))
-  
-  hc <- hclust(as.dist(mat_sub), method = "complete")
+  if(length(alleles)<3){
+    hc <- hclust(as.dist(mat_sub))
+  }else{
+    hc <- ape::nj(as.dist(mat_sub))
+    hc <- ape::ladderize(hc)
+  }
   dend <- as.dendrogram(hc)
   dend <- dendextend::set(dend, "labels_cex", 2)
   ggd1 <- as.ggdend(dend)
-  p_dend <- ggplot(ggd1, theme = bbplot::bbc_style())  + theme(
-    axis.line = element_blank(), axis.title.x = element_blank(),
-    axis.ticks.x = element_blank(), axis.text.x = element_blank(),
-    axis.text.y = element_text(size = 24), axis.title.y = element_text(size = 24),
-    panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-    panel.border = element_blank(), panel.background = element_blank(), 
-    legend.position = "none" ) + scale_y_continuous(sec.axis = sec_axis(~.*nucs, name = "Mutations")) +
+  p_dend <- ggplot(ggd1)  + 
+    theme(
+    axis.line = element_blank(), 
+    axis.title.x = element_blank(),
+    axis.ticks.x = element_blank(), 
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(size = 24), 
+    axis.title.y = element_text(size = 24),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(), 
+    panel.border = element_blank(), 
+    panel.background = element_blank(), 
+    legend.position = "none" ) + 
+    scale_y_continuous(
+      sec.axis = sec_axis(~.*nucs, name = "Mutations")) +
     ylab("Ratio")
   
   
+  snps <- which(apply(matrix_sequences, 1, function(x) length(unique(x))!=1))
   
   matrix_sequences$annot <- apply(matrix_sequences, 1, function(x) length(unique(x)) != 1) 
   matrix_sequences$pos <- 1:318
@@ -526,16 +540,51 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   matrix_sequences_plot$value[matrix_sequences_plot$value=="."] <- NA
   matrix_sequences_plot$annot_text <- sapply(1:nrow(matrix_sequences_plot), function(i) ifelse(matrix_sequences_plot$annot[i],matrix_sequences_plot$value[i],""))
   
-  plot_align <- function(data, low_bound = 1, upper_boud = 80){
+  
+  
+  hotspot <- c()
+  if(length(snps)!=0){
+    for(s in snps){
+      ht_snp <- c()
+      for(i in 1:(ncol(matrix_sequences)-2)){
+        if(s>3) ht_snp <- c(ht_snp,
+                    grepl("[AG]G[TC][AT]",
+                          paste0(matrix_sequences[(s-1):(s+2),i], collapse = "")) | grepl("[AT][AG]C[TC]",
+                                                                           paste0(matrix_sequences[(s-2):(s+1),i], collapse = "")))
+      }
+      if(any(ht_snp)) hotspot <- c(hotspot,s)
+    }
+  }
+  plot_align <- function(data, low_bound = 1, upper_boud = 80, hotspot){
     
-    
-    ggplot(data[data$id>=low_bound & data$id<upper_boud, ], aes(x=(pos), y=(allele))) + 
-      geom_tile(aes(fill=value),colour="white") + 
-      geom_text(aes(label = annot_text), color = "black") +
+    if(length(hotspot)!=0) ht <- hotspot[which(as.numeric(hotspot) %in% low_bound:upper_boud)] else ht <- NULL
+    p <- ggplot(data[data$id>=low_bound & data$id<upper_boud, ]) + 
+      geom_tile(aes(x=(pos), y=(allele), fill=value),colour="white") + 
+      geom_text(aes(x=(pos), y=(allele), label = annot_text), color = "black") +
       #coord_equal(expand = F, xlim = c(low_bound, upper_boud), ratio = 9/5, clip = "off") + 
       bbplot::bbc_style() + 
-      scale_fill_manual(values = c("#1380A1", "#FAAB18", "#990000", "#588300", "gray50")) + theme_align
+      scale_fill_manual(
+        values = c(unname(jcolors("pal2")[c(1,3,4,5)]), "gray50")) + 
+      theme_align # "#1380A1", "#FAAB18", "#990000", "#588300"
     
+    if(!is.null(ht)){
+      for(h in ht){
+        
+        df_rect <- data.frame(ymin =1, 
+                              ymax = length(unique(data$allele)), 
+                              x = h)
+        
+        
+        p <- p + geom_rect(data=df_rect, size=1, fill=NA, 
+                           linejoin = "bevel", lty = 3, colour=jcolors("pal2")[2],
+                           aes(xmin=x - 0.5, 
+                               xmax=x + 0.5, 
+                               ymin=ymin - 0.5, 
+                               ymax=ymax + 0.5))
+      }
+    }
+    if(low_bound==1) p <- p + theme(legend.position = "top")
+    return(p)
   }
   
   theme_align <- theme(
@@ -552,7 +601,7 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   p_list <- apply(data.frame(low_bound = seq(1, 318, by = 80),
                              upper_bound = c(seq(81, 318, by = 80),319)),
                   1, function(x){
-                    plot_align(matrix_sequences_plot, x[1], x[2])
+                    plot_align(matrix_sequences_plot, x[1], x[2], hotspot)
                   }
                   )
   
@@ -673,7 +722,7 @@ source_haplo_usage <- function(g_group, allele_thresh){
   cat(
     '<iframe
   src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22"),
-    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:900px;" cellspacing="0">
+    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:1100px;" cellspacing="0">
   </iframe>', sep = ""
   )
 }
@@ -682,7 +731,7 @@ source_haplo_usage_specific <- function(g_group, allele_thresh){
   cat(
     '<iframe
   src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22&allele_thresh=%22",allele_thresh,"%22"),
-    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:900px;" cellspacing="0">
+    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:1100px;" cellspacing="0">
   </iframe>', sep = ""
   )
 }

@@ -40,6 +40,7 @@ hline <- function(y = 0,
 }
 
 
+
 load("alleles_dbs.rda")
 allele_db <-
   alleles_dbs$IGH$functional$nonsingle$all$`318`$complete$`95`
@@ -65,6 +66,7 @@ data$group_plot <- ifelse(is.na(data$j_call), 1, 2)
 
 ui <- fluidPage(
   title = "Groups relative usage",
+
   tags$head(
     tags$style(
       HTML(
@@ -77,21 +79,22 @@ ui <- fluidPage(
     '
       )
     ),
-    tags$script(
-      "$(document).on('change', '.dynamicSI input', function () {
-                              Shiny.setInputValue('lastSelectId', this.id, {priority: 'event'});
-                             });"
-    )
+
+     tags$script(
+       "$(document).on('change', '.dynamicSI input', function () {
+                               Shiny.setInputValue('lastSelectId', this.id, {priority: 'event'});
+                              });"
+     )
   ),
   theme = shinytheme("sandstone"),
   fluidRow(
-    column(5,switchInput(
+    switchInput(
       inputId = paste0("hetro"),
       label = "J6 heterozygous",
-      value = F, width = "100%"
+      value = F, width = "50%"
 
-    )),
-    column(3,shinyWidgets::dropdownButton(
+    ),
+    shinyWidgets::dropdownButton(
       inputId = "drop_allele",
       actionBttn(
         inputId = "reset_input",
@@ -108,7 +111,31 @@ ui <- fluidPage(
       circle = FALSE,
       status = "btn-dark",
       size = "sm"
-    ))
+    ),
+    switchInput(
+      inputId = paste0("abs"),
+      label = "absolute thresh",
+      value = F, width = "50%"
+
+    ),
+    shinyWidgets::dropdownButton(
+      inputId = "drop_allele_abs",
+      actionBttn(
+        inputId = "reset_input2",
+        label = "reset thresholds",
+        style = "minimal",
+        color = "success",
+        size = "sm",
+        icon = icon("undo")
+      ),
+      br(),
+      uiOutput("thresh_abs"),
+      icon = icon("sliders-h"),
+      label = "absolute alleles thresholds",
+      circle = FALSE,
+      status = "btn-dark",
+      size = "sm"
+    )
 
   ),
   mainPanel(tabsetPanel(id = "tabs"))
@@ -121,14 +148,17 @@ server <- function(input, output, session) {
   input_vals <-
     reactiveValues(
       tabs_count = 0,
-      g_group = "IGHV1-3G4",
-      g = allele_db %>% dplyr::filter(gene_group == "IGHV1-3G4") %>% pull(gene) %>% unique(),
-      v_gene_cut = "IGHV1-3G4",
+      g_group = "IGHV1-46G6",
+      g = allele_db %>% dplyr::filter(gene_group == "IGHV1-46G6") %>% pull(gene) %>% unique(),
+      v_gene_cut = "IGHV1-46G6",
       allele_thresh = NULL,
-      allele_thresh_names = NULL
+      allele_thresh_names = NULL,
+      allele_thresh_abs = NULL,
+      allele_thresh_names_abs = NULL,
+      tabs = NULL, tabs_left = NULL
     )
   allele_num <- reactiveValues(len = 0)
-  a_thresh <- reactiveValues(a_thresh = NULL)
+  a_thresh <- reactiveValues(a_thresh = NULL, a_thresh_abs = NULL)
 
   query <- eventReactive(session$clientData$url_search, {
     parseQueryString(session$clientData$url_search)
@@ -136,7 +166,7 @@ server <- function(input, output, session) {
 
   observeEvent(query()$g_group, {
     if (!is.null(query()$g_group)) {
-      print(query()$g_group)
+
       g_group <- strsplit(query()$g_group, "\"")[[1]][2]
       g <-
         allele_db %>% dplyr::filter(gene_group == g_group) %>% pull(gene) %>% unique()
@@ -177,6 +207,11 @@ server <- function(input, output, session) {
 
     input_vals$allele_thresh <-
       setNames(rep(0.5, length(unique(
+        tmp$v_allele_axis
+      ))), unique(tmp$v_allele_axis))
+
+    input_vals$allele_thresh_abs <-
+      setNames(rep(1e-4, length(unique(
         tmp$v_allele_axis
       ))), unique(tmp$v_allele_axis))
 
@@ -249,30 +284,71 @@ server <- function(input, output, session) {
   outputOptions(output, "thresh", suspendWhenHidden = FALSE)#, priority = 20)
 
 
+  output$thresh_abs <-
+    renderUI({
+      a_thresh$a_thresh_abs <- input_vals$allele_thresh_abs
+      input_vals$allele_thresh_names_abs <-
+        setNames(paste0("allele_abs", 1:length(unique(
+          data_cut()$v_allele_axis
+        ))),
+        names(reactiveValuesToList(input_vals)$allele_thresh_abs))
+      allele_num$len <- length(unique(data_cut()$v_allele_axis))
+      div(class = "dynamicSI",
+          lapply(1:length(unique(
+            data_cut()$v_allele_axis
+          )), function(i) {
+            lab <- unique(data_cut()$v_allele_axis)[i]
+            val <- as.numeric(input_vals$allele_thresh_abs[lab])
+            numericInput(
+              inputId = paste0("allele_abs", i),
+              label = lab,
+              value = val,
+              min = 1e-6,
+              max = 0.01,
+              step = 0.0001
+            )
+          }))
+
+      #lab <- unique(data_cut()$v_allele_axis)[1]
+      #val <- as.numeric(a_thresh[lab])
+      #numericInput(inputId = "dat", label = "dfkjs", value = 0.5, min = 0.5, max = 20, step = 0.1)
+    })
+
+  outputOptions(output, "thresh_abs", suspendWhenHidden = FALSE)#, priority = 20)
+
 
   observeEvent(input$lastSelectId, once = F, {
     vals <- reactiveValuesToList(input)
     vals <- vals[grep("allele[0-9]", names(vals))]
+    if(length(vals)!=0){
     names_ <- reactiveValuesToList(input_vals)$allele_thresh
     names_input <-
       reactiveValuesToList(input_vals)$allele_thresh_names
-    print(names_input)
+
     for (x in 1:length(vals)) {
       a_names = names(names_)[x]
 
       a_thresh$a_thresh[a_names] <-
         as.numeric(vals[[names_input[a_names]]])
-    }
-    print(a_thresh$a_thresh)
-    # lapply(1:length(isolate(a_thresh$a_thresh)), function(id){
-    #     observeEvent(input[[paste0("allele",id)]],{
-    #       a_names = names(isolate(input_vals$allele_thresh))[id]
-    #       a_thresh_vlues = ifelse(is.null(input[[paste0("allele",id)]]),0.5,input[[paste0("allele",id)]])
-    #
-    #       a_thresh$a_thresh[a_names] <- a_thresh_vlues
-    #     })
-    #   })
+    }}
   })
+
+
+  observeEvent(input$lastSelectId, once = F, {
+    vals <- reactiveValuesToList(input)
+    vals <- vals[grep("allele_abs[0-9]", names(vals))]
+    if(length(vals)!=0){
+    names_ <- reactiveValuesToList(input_vals)$allele_thresh_abs
+    names_input <-
+      reactiveValuesToList(input_vals)$allele_thresh_names_abs
+
+    for (x in 1:length(vals)) {
+      a_names = names(names_)[x]
+      a_thresh$a_thresh_abs[a_names] <-
+        as.numeric(vals[[names_input[a_names]]])
+    }}
+  })
+
   observe({
     input$lastSelect
 
@@ -283,11 +359,20 @@ server <- function(input, output, session) {
   })
 
   #observeEvent(, once = F,{
-  data_gene <- eventReactive(a_thresh$a_thresh, {
+  data_gene <- eventReactive(c(
+    input$lastSelect,
+    a_thresh$a_thresh
+    ), {
     tmp <- isolate(data_cut())
-    tmp <-
-      tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
-                                                            100)
+    if(!input$abs){
+      tmp <-
+        tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
+                                                              100)
+    }else{
+      tmp <-
+        tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh_abs[v_allele_axis] /
+                                                              100)
+    }
     tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
       dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
         zygousity_state = as.numeric(length(unique(v_allele))),
@@ -316,8 +401,6 @@ server <- function(input, output, session) {
     req(data_gene())
     states <- sort(as.numeric(unique(data_gene()$zygousity_state)))
 
-
-
     if (input_vals$tabs_count < 1) {
       input_vals$tabs_count <- 1
       lapply(states, function(i) {
@@ -325,7 +408,8 @@ server <- function(input, output, session) {
           session = session,
           inputId = "tabs",
           tabPanel(
-            title = paste0("State ", i),
+            title = uiOutput(paste0("State_", i)),
+            value = paste0("tab_",i),
             plotlyOutput(paste0('scatter', i)),
             br(),
             br(),
@@ -334,6 +418,29 @@ server <- function(input, output, session) {
 
           )
         )
+        output[[paste0("State_", i)]] = renderText({
+          paste0("<font color=\"#000000\">", paste0("State ",i), "</font>")
+        })
+      })
+
+      input_vals$tabs <- paste0("State ", states)
+      input_vals$tabs_left <- paste0("State ", states)
+    }else{
+      print(input_vals$tabs)
+      print(states)
+      lapply(input_vals$tabs, function(i) {
+        if(i %in% paste0("State ",states)){
+          output[[gsub(" ","_",i)]] = renderText({
+            paste0("<font color=\"#000000\">", i, "</font>")
+          })
+        }else{
+
+          output[[gsub(" ","_",i)]] = renderText({
+            paste0("<font color=\"#eeeeee\">", i, "</font>")
+          })
+
+        }
+
       })
 
     }
@@ -341,17 +448,19 @@ server <- function(input, output, session) {
     updateTabsetPanel(
       session = session,
       inputId = "tabs",
-      selected = paste0("State ", states[1])
+      selected = paste0("tab_",1)
     )
+
+    print(input$tabNames)
 
     Map(function(state) {
       state_val <- reactiveValues(i = as.numeric(state))
 
 
-      plt_data = eventReactive(input$hetro, {
+      plt_data = eventReactive(c(input$hetro,input$abs), {
         req(plt_data_het())
         req((input$hetro == T | input$hetro == F))
-        print(unique(plt_data_het()$subject))
+
         tmp_plot <-  isolate(plt_data_het()) %>%
           dplyr::filter(zygousity_state == as.numeric(state_val$i),
                         is.na(j_call)) %>% ungroup() %>% dplyr::rowwise() %>% dplyr::mutate(
@@ -367,10 +476,10 @@ server <- function(input, output, session) {
                               v_alleles,
                               '</br># assignments: ',
                               count,
-                              '</br>Relative freq.: ',
-                              round(freq, 4),
-                              '</br>Relative Rep. freq.: ',
-                              round(freq2, 4),
+                              '</br>Group normalization freq.: ',
+                              freq,
+                              '</br>Rep. normalization freq.: ',
+                              freq2,
                               '</br>',
                               J6_TAG
                             )
@@ -414,9 +523,15 @@ server <- function(input, output, session) {
       filteredScores <- eventReactive(plt_data(), {
         req((input$hetro == T | input$hetro == F))
         tmp <- isolate(data_cut())
-        tmp <-
-          tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
+        if(!input$abs){
+          tmp <-
+            tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
                                                                 100)
+        }else{
+          tmp <-
+            tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh_abs[v_allele_axis] /
+                                                                  100)
+        }
         tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
           dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
             zygousity_state = as.numeric(length(unique(v_allele))),
@@ -446,10 +561,10 @@ server <- function(input, output, session) {
                               v_alleles,
                               '</br># assignments: ',
                               count,
-                              '</br>Relative freq.: ',
-                              round(freq, 4),
-                              '</br>Relative Rep. freq.: ',
-                              round(freq2, 4),
+                              '</br>Group normalization freq.: ',
+                              freq,
+                              '</br>Rep. normalization freq.: ',
+                              freq2,
                               '</br>',
                               J6_TAG
                             )
@@ -536,10 +651,25 @@ server <- function(input, output, session) {
         #names(a_thresh) <- names(input_vals$allele_thresh)
         vals <- reactiveValuesToList(a_thresh)$a_thresh
         allele_thresh_state <- vals[names(vals) %in% names(loc2)]
+
+        names_tmp <- names(loc2)[names(loc2) %in% names(vals)]
+
+        allele_thresh_state <- allele_thresh_state[order(factor(names(allele_thresh_state), levels=names_tmp))]
+
+        vals <- reactiveValuesToList(a_thresh)$a_thresh_abs
+        allele_thresh_state_absolute <- vals[names(vals) %in% names(loc2)]
+
+        names_tmp <- names(loc2)[names(loc2) %in% names(vals)]
+
+        allele_thresh_state_absolute <- allele_thresh_state_absolute[order(factor(names(allele_thresh_state_absolute), levels=names_tmp))]
+
         colors_line <-
           setNames(c("red", "green", "blue", "purple", "black"),
                    unique(allele_thresh_state))
-        print(vals)
+
+        colors_line_abs <-
+          setNames(c("red", "green", "blue", "purple", "black"),
+                   unique(allele_thresh_state_absolute))
 
         plotly1 <-
           plot_data %>%
@@ -584,6 +714,7 @@ server <- function(input, output, session) {
           ) %>%
           plotly::layout(
             hovermode = 'closest',
+            showlegend = T,
             shapes = lapply(1:length(names(
               allele_thresh_state
             )), function(ia) {
@@ -610,7 +741,7 @@ server <- function(input, output, session) {
               tickvals = tickvals,
               ticktext = ticktext
             ),
-            yaxis = list(title = "Relative allele freq.",
+            yaxis = list(title = "Group\nnormalization",
                          range = c(0, 1.05))
           )
 
@@ -658,7 +789,19 @@ server <- function(input, output, session) {
           ) %>%
           plotly::layout(
             hovermode = 'closest',
-            #shapes = list(hline(input_vals$allele_thresh / 100)),
+            shapes = lapply(1:length(names(
+              allele_thresh_state_absolute
+            )), function(ia) {
+              a = names(allele_thresh_state_absolute)[ia]
+              xx = tickvals
+              hline(
+                unname(allele_thresh_state_absolute[a]) / 100,
+                x0 = xx[ia] -
+                  0.25,
+                x1 = xx[ia] + 0.25,
+                color = colors_line_abs[as.character(allele_thresh_state_absolute[a])]
+              )
+            }),
             legend = list(
               tracegroupgap = 20,
               title = list(text =
@@ -672,7 +815,7 @@ server <- function(input, output, session) {
               tickvals = tickvals,
               ticktext = ticktext
             ),
-            yaxis = list(title = "Relative rep. freq.")
+            yaxis = list(title = "Rep.\nnormalization")
             #,range = c(0, 0.5))
           )
 
@@ -697,12 +840,12 @@ server <- function(input, output, session) {
             tickfont = list(size = 18)
           ),
           yaxis = list(
-            titlefont = list(size = 18),
-            tickfont = list(size = 18)
+            titlefont = list(size = 16),
+            tickfont = list(size = 16)
           ),
           yaxis2 = list(
-            titlefont = list(size = 18),
-            tickfont = list(size = 18)
+            titlefont = list(size = 16),
+            tickfont = list(size = 16)
           ),
           legend = list(font = list(size = 12)),
           hoverlabel = list(bgcolor = 'rgba(255,255,255,0.75)',
@@ -768,10 +911,10 @@ server <- function(input, output, session) {
           subject_key <-
             eventdat[['key']] # Index of the data point being charted
 
-          print(plt_data_haplo$db)
+
           plot_bar <- plt_data_haplo$db
 
-          print(dplyr::filter(plot_bar,!is.na(j_call), subject == subject_key))
+
 
           plot_bar <-
             dplyr::filter(plot_bar,!is.na(j_call), subject == subject_key)
@@ -789,8 +932,23 @@ server <- function(input, output, session) {
           shiny:::flushReact()
           plotly::ggplotly(
             ggplot(
-              plot_bar,
-              aes(v_allele_axis, freq, fill = v_alleles_p)
+              plot_bar  %>% rowwise()%>% mutate(text = HTML(
+                paste(
+                  '</br>Project: ',
+                  project,
+                  '</br>Subject: ',
+                  subject,
+                  '</br>Allele: ',
+                  v_allele,
+                  '</br># assignments: ',
+                  count,
+                  '</br>Group normalization freq.: ',
+                  freq,
+                  '</br>Rep. normalization freq.: ',
+                  freq2
+                )
+              )),
+              aes(v_allele_axis, freq, fill = v_alleles_p, text = text)
             ) +
               geom_col(width = 0.2) + facet_grid(j_call ~ .) + theme_minimal(base_size = 12) +
               labs(
@@ -798,7 +956,8 @@ server <- function(input, output, session) {
                 x = paste0(subject_key, " Alleles"),
                 fill = ""
               ) + scale_y_continuous(limits = c(0, 1)) +
-              scale_fill_manual(values = colors()[unique(plot_bar$v_alleles_p)]) + theme(legend.position = "none")
+              scale_fill_manual(values = colors()[unique(plot_bar$v_alleles_p)]) + theme(legend.position = "none"),
+            tooltip = "text"
           ) %>%
             plotly::layout(showlegend = F) %>% plotly::config(displayModeBar = F)
           #) %>% layout(
@@ -820,6 +979,7 @@ server <- function(input, output, session) {
   #
   # })
 
+
   observeEvent(input$reset_input, once = F, {
     lapply(1:length(input_vals$allele_thresh), function(i) {
       lab <- names(input_vals$allele_thresh)[i]
@@ -832,6 +992,20 @@ server <- function(input, output, session) {
 
   })
 
+
+  observeEvent(input$reset_input2, once = F, {
+    lapply(1:length(input_vals$allele_thresh_abs), function(i) {
+      lab <- names(input_vals$allele_thresh_abs)[i]
+
+      val <- as.numeric(input_vals$allele_thresh_abs[lab])
+
+      updateNumericInput(session, paste0("allele_abs", i), value = val)
+
+    })
+
+  })
+
 }
 
 shinyApp(ui = ui, server = server)
+
