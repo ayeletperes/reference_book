@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = F, error=F, message = F)
 pacman::p_load('dplyr', 'tidyr', 'htmltools', 'bbplot', 'scales',
                'ggplot2', 'rdrop2', 'shiny', 'BiocManager',
                'dendextend', 'data.table', 'Biostrings', 'alakazam', "unikn", 
-               'plotly', 'ggdendro', "RColorBrewer", install = F)
+               'plotly', "jcolors", 'ggdendro', "RColorBrewer","kmer", install = F)
 ```
 
 ```{r}

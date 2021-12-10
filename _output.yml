@@ -1,6 +1,7 @@
 bookdown::gitbook:
   css: style.css
   split_by: rmd
+  number_sections: false
   config:
     edit:
       link: https://github.com/ayeletperes/reference_book/edit/master/%s
