@@ -69,6 +69,7 @@ ui <- fluidPage(
 
   tags$head(
     tags$style(
+      "[type = 'number'] {font-size:10px;height:5px;}",
       HTML(
         '
       .same-row {
@@ -87,56 +88,77 @@ ui <- fluidPage(
      )
   ),
   theme = shinytheme("sandstone"),
-  fluidRow(
-    switchInput(
-      inputId = paste0("hetro"),
-      label = "J6 heterozygous",
-      value = F, width = "50%"
+  wellPanel(width = 12, style = "background: #FFFAFA",
+    fluidRow(
+      column(12,
+        switchInput(
+          inputId = paste0("hetro"),
+          label = "J6 heterozygous",
+          value = F, width = "150%", size = "small", labelWidth = "100px"
 
-    ),
-    shinyWidgets::dropdownButton(
-      inputId = "drop_allele",
-      actionBttn(
-        inputId = "reset_input",
-        label = "reset thresholds",
-        style = "minimal",
-        color = "success",
-        size = "sm",
-        icon = icon("undo")
-      ),
-      br(),
-      uiOutput("thresh"),
-      icon = icon("sliders-h"),
-      label = "alleles thresholds",
-      circle = FALSE,
-      status = "btn-dark",
-      size = "sm"
-    ),
-    switchInput(
-      inputId = paste0("abs"),
-      label = "absolute thresh",
-      value = F, width = "50%"
+        ),
+        switchInput(
+          inputId = paste0("naive"),
+          label = "Naive repertoires",
+          value = T, size = "small", inline = T, labelWidth = "100px"
 
-    ),
-    shinyWidgets::dropdownButton(
-      inputId = "drop_allele_abs",
-      actionBttn(
-        inputId = "reset_input2",
-        label = "reset thresholds",
-        style = "minimal",
-        color = "success",
-        size = "sm",
-        icon = icon("undo")
-      ),
-      br(),
-      uiOutput("thresh_abs"),
-      icon = icon("sliders-h"),
-      label = "absolute alleles thresholds",
-      circle = FALSE,
-      status = "btn-dark",
-      size = "sm"
+        ),
+        switchInput(
+          inputId = paste0("abs"),
+          label = "absolute thresh",
+          value = F, width = "150%", size = "small", labelWidth = "100px"
+
+        )
+      )),
+    fluidRow(
+      #column(8,
+        conditionalPanel(
+          condition = "input.abs == false",
+          # shinyWidgets::dropdownButton(
+          #   inputId = "drop_allele",
+          column(width=2,
+            actionBttn(
+              inputId = "reset_input",
+              label = "reset thresholds",
+              style = "minimal",
+              color = "success",size = "xs",
+              icon = icon("undo")
+            )),
+           br(),
+          column(width=12, uiOutput("thresh")),
+            # icon = icon("sliders-h"),
+            # label = "alleles thresholds",
+            # circle = FALSE,
+            # status = "btn-dark",
+            # size = "sm"
+          #)
+
+        )),
+        conditionalPanel(
+          condition = "input.abs == true",
+          # shinyWidgets::dropdownButton(
+          #   inputId = "drop_allele_abs",
+            actionBttn(
+              inputId = "reset_input2",
+              label = "reset thresholds",
+              style = "minimal",
+              color = "success",
+              size = "sm",
+              icon = icon("undo")
+            ),
+            br(),
+            column(width=12, uiOutput("thresh_abs"))
+          #   icon = icon("sliders-h"),
+          #   label = "absolute alleles thresholds",
+          #   circle = FALSE,
+          #   status = "btn-dark",
+          #   size = "sm"
+          # )
+
+
+      #)
+
     )
-
   ),
   mainPanel(tabsetPanel(id = "tabs"))
 )
@@ -148,9 +170,9 @@ server <- function(input, output, session) {
   input_vals <-
     reactiveValues(
       tabs_count = 0,
-      g_group = "IGHV1-46G6",
-      g = allele_db %>% dplyr::filter(gene_group == "IGHV1-46G6") %>% pull(gene) %>% unique(),
-      v_gene_cut = "IGHV1-46G6",
+      g_group = "IGHV1-69G8",
+      g = allele_db %>% dplyr::filter(gene_group == "IGHV1-69G8") %>% pull(gene) %>% unique(),
+      v_gene_cut = "IGHV1-69G8",
       allele_thresh = NULL,
       allele_thresh_names = NULL,
       allele_thresh_abs = NULL,
@@ -266,14 +288,15 @@ server <- function(input, output, session) {
           )), function(i) {
             lab <- unique(data_cut()$v_allele_axis)[i]
             val <- as.numeric(input_vals$allele_thresh[lab])
+            div(style = "display: inline-block;font-size:80%;",
             numericInput(
               inputId = paste0("allele", i),
               label = lab,
               value = val,
               min = 0.5,
               max = 20,
-              step = 0.1
-            )
+              step = 0.1, width = "100px"
+            ))
           }))
 
       #lab <- unique(data_cut()$v_allele_axis)[1]
@@ -299,6 +322,7 @@ server <- function(input, output, session) {
           )), function(i) {
             lab <- unique(data_cut()$v_allele_axis)[i]
             val <- as.numeric(input_vals$allele_thresh_abs[lab])
+            div(style = "display: inline-block;font-size:80%;",
             numericInput(
               inputId = paste0("allele_abs", i),
               label = lab,
@@ -306,7 +330,7 @@ server <- function(input, output, session) {
               min = 1e-6,
               max = 0.01,
               step = 0.0001
-            )
+            ))
           }))
 
       #lab <- unique(data_cut()$v_allele_axis)[1]
@@ -359,19 +383,22 @@ server <- function(input, output, session) {
   })
 
   #observeEvent(, once = F,{
-  data_gene <- eventReactive(c(
-    input$lastSelect,
-    a_thresh$a_thresh
-    ), {
+  data_gene <- eventReactive(list(
+    #input$lastSelect
+    a_thresh$a_thresh,
+    a_thresh$a_thresh_abs
+    ), ignoreInit = TRUE, {
     tmp <- isolate(data_cut())
+    req((input$naive == T | input$naive == F))
     if(!input$abs){
       tmp <-
         tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
                                                               100)
     }else{
+      print("ok")
+      print(a_thresh$a_thresh_abs)
       tmp <-
-        tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh_abs[v_allele_axis] /
-                                                              100)
+        tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis])
     }
     tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
       dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
@@ -381,6 +408,12 @@ server <- function(input, output, session) {
       ) %>% arrange(subject)
     tmp <- tmp %>% dplyr::group_by(subject, zygousity_state) %>%
       dplyr::mutate(loc_state = loc <= zygousity_state) %>% dplyr::filter(loc_state) %>% ungroup()
+
+    if (input$naive) {
+      tmp <- tmp %>% dplyr::filter(!grepl("P4",subject))
+    } else{
+      tmp <- tmp
+    }
 
     return(tmp)
   })
@@ -426,8 +459,6 @@ server <- function(input, output, session) {
       input_vals$tabs <- paste0("State ", states)
       input_vals$tabs_left <- paste0("State ", states)
     }else{
-      print(input_vals$tabs)
-      print(states)
       lapply(input_vals$tabs, function(i) {
         if(i %in% paste0("State ",states)){
           output[[gsub(" ","_",i)]] = renderText({
@@ -451,7 +482,6 @@ server <- function(input, output, session) {
       selected = paste0("tab_",1)
     )
 
-    print(input$tabNames)
 
     Map(function(state) {
       state_val <- reactiveValues(i = as.numeric(state))
@@ -479,7 +509,7 @@ server <- function(input, output, session) {
                               '</br>Group normalization freq.: ',
                               freq,
                               '</br>Rep. normalization freq.: ',
-                              freq2,
+                              as.character(freq2),
                               '</br>',
                               J6_TAG
                             )
@@ -522,6 +552,7 @@ server <- function(input, output, session) {
 
       filteredScores <- eventReactive(plt_data(), {
         req((input$hetro == T | input$hetro == F))
+        req((input$abs == T | input$abs == F))
         tmp <- isolate(data_cut())
         if(!input$abs){
           tmp <-
@@ -529,8 +560,7 @@ server <- function(input, output, session) {
                                                                 100)
         }else{
           tmp <-
-            tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh_abs[v_allele_axis] /
-                                                                  100)
+            tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis])
         }
         tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
           dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
@@ -546,6 +576,13 @@ server <- function(input, output, session) {
         } else{
           tmp <- tmp
         }
+
+        if (input$naive) {
+          tmp <- tmp %>% dplyr::filter(!grepl("P4",subject))
+        } else{
+          tmp <- tmp
+        }
+
         plot_data <-  tmp %>%
           dplyr::filter(zygousity_state == as.numeric(state_val$i),
                         is.na(j_call)) %>% ungroup() %>% dplyr::rowwise() %>% dplyr::mutate(
@@ -558,13 +595,13 @@ server <- function(input, output, session) {
                               '</br>Subject: ',
                               subject,
                               '</br>Alleles: ',
-                              v_alleles,
+                              gsub(";", "\n", v_alleles),
                               '</br># assignments: ',
                               count,
-                              '</br>Group normalization freq.: ',
+                              '</br>Group norm. freq.: ',
                               freq,
-                              '</br>Rep. normalization freq.: ',
-                              freq2,
+                              '</br>Rep. norm. freq.:',
+                              as.character(freq2),
                               '</br>',
                               J6_TAG
                             )
@@ -836,8 +873,8 @@ server <- function(input, output, session) {
             x = 0
           ),
           xaxis = list(
-            titlefont = list(size = 18),
-            tickfont = list(size = 18)
+            titlefont = list(size = 14),
+            tickfont = list(size = 14)
           ),
           yaxis = list(
             titlefont = list(size = 16),

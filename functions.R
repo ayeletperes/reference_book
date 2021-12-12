@@ -722,7 +722,7 @@ source_haplo_usage <- function(g_group, allele_thresh){
   cat(
     '<iframe
   src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22"),
-    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:1100px;" cellspacing="0">
+    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:800px;" cellspacing="0">
   </iframe>', sep = ""
   )
 }
