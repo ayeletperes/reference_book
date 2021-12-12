@@ -1,4 +1,4 @@
-# IGHV6-1 - G47
+# IGHV5-51 - G47
 ```{r}
 source("functions.R")
 ```
@@ -30,7 +30,7 @@ share_links <- readLines("share_links.txt")
 ```
 
 ```{r,echo=FALSE}
-g_group = "IGHV6-1G47"
+g_group = "IGHV5-51G47"
 group = names(func_groups)[func_groups==g_group]
 gr <- allele_db %>% filter(gene_group == g_group) %>% pull(group) %>% unique()
 g <- allele_db %>% filter(gene_group == g_group) %>% pull(gene) %>% unique()
