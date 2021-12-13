@@ -70,6 +70,12 @@ ui <- fluidPage(
   tags$head(
     tags$style(
       "[type = 'number'] {font-size:10px;height:5px;}",
+      ".butt{background-color:#FFFAFA;} .butt{color: #FFD700;} .butt{height:40px;
+    width:57px;
+    padding-top: 3 !important;}",
+      ".butt:hover {
+  background-color: #FFD700;
+             color:#FFFAFA;}",
       HTML(
         '
       .same-row {
@@ -97,10 +103,15 @@ ui <- fluidPage(
           value = F, width = "150%", size = "small", labelWidth = "100px"
 
         ),
-        switchInput(
-          inputId = paste0("naive"),
-          label = "Naive repertoires",
-          value = T, size = "small", inline = T, labelWidth = "100px"
+        # switchInput(
+        #   inputId = paste0("naive"),
+        #   label = "Naive repertoires",
+        #   value = T, size = "small", inline = T, labelWidth = "100px"
+        #
+        # ),
+        shinyWidgets::awesomeRadio(
+          inputId = paste0("mut"),
+          label = "# max mutations allowed", choices = c("0="=0,"1=<"=1,"2=<"=2,"3=<"=3),selected = 3, inline = T
 
         ),
         switchInput(
@@ -383,22 +394,23 @@ server <- function(input, output, session) {
   })
 
   #observeEvent(, once = F,{
+
   data_gene <- eventReactive(list(
     #input$lastSelect
     a_thresh$a_thresh,
-    a_thresh$a_thresh_abs
+    a_thresh$a_thresh_abs,
+    input$mut
     ), ignoreInit = TRUE, {
     tmp <- isolate(data_cut())
-    req((input$naive == T | input$naive == F))
     if(!input$abs){
       tmp <-
         tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
-                                                              100)
+                                                              100, mut == input$mut)
     }else{
       print("ok")
       print(a_thresh$a_thresh_abs)
       tmp <-
-        tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis])
+        tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis], mut == input$mut)
     }
     tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
       dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
@@ -409,11 +421,11 @@ server <- function(input, output, session) {
     tmp <- tmp %>% dplyr::group_by(subject, zygousity_state) %>%
       dplyr::mutate(loc_state = loc <= zygousity_state) %>% dplyr::filter(loc_state) %>% ungroup()
 
-    if (input$naive) {
-      tmp <- tmp %>% dplyr::filter(!grepl("P4",subject))
-    } else{
-      tmp <- tmp
-    }
+    # if (input$naive) {
+    #   tmp <- tmp %>% dplyr::filter(!grepl("P4",subject))
+    # } else{
+    #   tmp <- tmp
+    # }
 
     return(tmp)
   })
@@ -443,8 +455,11 @@ server <- function(input, output, session) {
           tabPanel(
             title = uiOutput(paste0("State_", i)),
             value = paste0("tab_",i),
-            plotlyOutput(paste0('scatter', i)),
+            downloadButton(outputId = paste0("downloadData_",i),
+                           label = "Download frequency table", style = "width:50%;",class = "butt"),
             br(),
+            br(),
+            plotlyOutput(paste0('scatter', i)),
             br(),
             br(),
             plotlyOutput(paste0('hover', i))
@@ -557,10 +572,10 @@ server <- function(input, output, session) {
         if(!input$abs){
           tmp <-
             tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
-                                                                100)
+                                                                100, mut == input$mut)
         }else{
           tmp <-
-            tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis])
+            tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis], mut == input$mut)
         }
         tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
           dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
@@ -577,11 +592,11 @@ server <- function(input, output, session) {
           tmp <- tmp
         }
 
-        if (input$naive) {
-          tmp <- tmp %>% dplyr::filter(!grepl("P4",subject))
-        } else{
-          tmp <- tmp
-        }
+        # if (input$naive) {
+        #   tmp <- tmp %>% dplyr::filter(!grepl("P4",subject))
+        # } else{
+        #   tmp <- tmp
+        # }
 
         plot_data <-  tmp %>%
           dplyr::filter(zygousity_state == as.numeric(state_val$i),
@@ -679,7 +694,7 @@ server <- function(input, output, session) {
           plot_data %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
 
 
-        plot_data <- plot_data %>%
+        plot_data_final <- plot_data %>%
           highlight_key(., ~ subject)
 
         #a_names = isolate(input_vals$allele_thresh)
@@ -709,7 +724,7 @@ server <- function(input, output, session) {
                    unique(allele_thresh_state_absolute))
 
         plotly1 <-
-          plot_data %>%
+          plot_data_final %>%
           plotly::plot_ly(colors = colors()) %>%
           plotly::add_trace(
             type = "scatter",
@@ -784,7 +799,7 @@ server <- function(input, output, session) {
 
 
         plotly2 <-
-          plot_data %>%
+          plot_data_final %>%
           plotly::plot_ly(colors = colors()) %>%
           plotly::add_trace(
             type = "scatter",
@@ -900,9 +915,10 @@ server <- function(input, output, session) {
 
         return(
           #onRender(
-            s %>%
-              plotly::event_register('plotly_click') %>% plotly::config(displayModeBar = F, #edits = list(shapePosition = TRUE),
-                                                                        scrollZoom = FALSE)
+          list(plot=s %>%
+              plotly::event_register('plotly_click') %>% plotly::config(displayModeBar = T, #edits = list(shapePosition = TRUE),
+                                                                        scrollZoom = FALSE),
+              table = plot_data))
         #     "function (el, x) {
         #
         #   // Get selectized search widget
@@ -918,11 +934,24 @@ server <- function(input, output, session) {
         #
         # }"
         #   )
-        )
+
       })
+
+      output[[paste0("downloadData_",as.numeric(state_val$i))]] <- downloadHandler(
+        filename = paste0(input_vals$g_group,"_state",as.numeric(state_val$i),".tsv"),
+        content = function(file) {
+          tab = isolate(filteredScores()$table)
+          tab$v_allele <- as.character(tab$v_allele)
+          columns_names <- strsplit("subject,v_gene,v_allele,count,freq,freq2,project,J6_TAG,mut,v_allele_axis,zygousity_state,v_alleles",",")[[1]]
+          columns_names2 <- strsplit("subject,v_gene,v_allele,count,group_freq,rep_freq,project,j6_hetro,mut,original_allele,zygousity_state,state_alleles_combination", ",")[[1]]
+          tab <- tab[,columns_names]
+          names(tab) <- columns_names2
+          data.table::fwrite(x = as.data.table(tab), file = file, sep = "\t")
+        })
+
       output[[paste0("scatter", as.numeric(state_val$i))]] <-
         renderPlotly({
-          filteredScores()
+          filteredScores()$plot
         })
 
       #.update x/y reactive values in response to changes in shape anchors

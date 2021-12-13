@@ -15,6 +15,7 @@ allele_appearance <- function(data_, g_group, allele_db){
     )))
   
   n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
+  data_ <- data_ %>% filter(mut ==3)
   data_ <- data_[grepl(g_group,v_gene)]
   data_[,v_alleles2:=or_allele[v_allele]]
   ggplot(data_ %>% filter(is.na(j_call)), aes(v_alleles2, fill = v_alleles2)) + 
@@ -40,6 +41,7 @@ sequence_depth <- function(data_, g_group, allele_db){
     )))
   
   n_alleles <- length(unique(data_[grepl(g_group,v_gene),v_allele]))
+  data_ <- data_ %>% filter(mut ==3)
   data_ <- data_[grepl(g_group,v_gene) & is.na(j_call)]
   data_[,v_alleles2:=or_allele[v_allele]]
   
