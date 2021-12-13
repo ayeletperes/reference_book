@@ -89,20 +89,27 @@ colored_bars(
 ```
 
 
-## Projects sequence depth
+## Group Checklist
 
 ```{r}
-load("data_frac_new2.rda")
-
-data <- data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`
-
-depth <- data %>% dplyr::group_by(project, subject) %>% dplyr::summarise(counts = sum(count))
-
-ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
-  bbplot::bbc_style() + scale_color_manual(values = alpha(c("#1380A1", "#FAAB18", "#990000"),0.99)) +
-  theme(axis.text.x = element_text(size = 12, angle = 45), 
-        axis.text.y = element_text(size = 14), legend.position = "none") #+
-  	#scale_x_continuous(labels = scales::label_number(suffix = " K", scale = 1e-5)) # millions
+# Projects sequence depth
+cat(
+    '<iframe
+  src=',paste0("https://peresay.shinyapps.io/checklist"),
+    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:500px;" cellspacing="0">
+  </iframe>', sep = ""
+  )
+# load("data_frac_new2.rda")
+# 
+# data <- data_frac$IGH$functional$nonsingle$all$`318`$complete$`95`
+# 
+# depth <- data %>% dplyr::group_by(project, subject) %>% dplyr::summarise(counts = sum(count))
+# 
+# ggplot(depth, aes(counts, fill = project)) + geom_histogram() + facet_grid(.~project) + 
+#   bbplot::bbc_style() + scale_color_manual(values = alpha(c("#1380A1", "#FAAB18", "#990000"),0.99)) +
+#   theme(axis.text.x = element_text(size = 12, angle = 45), 
+#         axis.text.y = element_text(size = 14), legend.position = "none") #+
+#   	#scale_x_continuous(labels = scales::label_number(suffix = " K", scale = 1e-5)) # millions
 
 ```
 

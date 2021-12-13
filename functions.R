@@ -722,18 +722,34 @@ rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, 
 
 source_haplo_usage <- function(g_group, allele_thresh){
   cat(
-    '<iframe
+    '<style>
+  
+#scroll-box {
+  overflow-y: scroll;
+  overflow-x: scroll !important;
+}
+</style>\n\n',
+'<div class="container">',
+    '<iframe id="scroll-box" 
   src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22"),
-    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:800px;" cellspacing="0">
-  </iframe>', sep = ""
+    ' scrolling="yes" border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 100%;height:800px;overflow-x: scroll !important;overflow: scroll;" cellspacing="0">
+  </iframe>\n\n</div>', sep = ""
   )
 }
 
 source_haplo_usage_specific <- function(g_group, allele_thresh){
   cat(
-    '<iframe
+    '<style>
+  
+#scroll-box {
+  overflow-y: scroll;
+  overflow-x: scroll !important;
+}
+</style>\n\n',
+'<div class="container">',
+'<iframe id="scroll-box" 
   src=',paste0("https://peresay.shinyapps.io/relative_usage_haplo/?g_group=%22",g_group,"%22&allele_thresh=%22",allele_thresh,"%22"),
-    ' border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 150%;height:1100px;" cellspacing="0">
-  </iframe>', sep = ""
+' scrolling="yes" border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 100%;height:800px;overflow-x: scroll !important;overflow: scroll;" cellspacing="0">
+  </iframe>\n\n</div>', sep = ""
   )
 }
