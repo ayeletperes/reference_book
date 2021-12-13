@@ -149,14 +149,14 @@ ui <- fluidPage(
           condition = "input.abs == true",
           # shinyWidgets::dropdownButton(
           #   inputId = "drop_allele_abs",
-            actionBttn(
+          column(width=2,actionBttn(
               inputId = "reset_input2",
               label = "reset thresholds",
               style = "minimal",
               color = "success",
-              size = "sm",
+              size = "xs",
               icon = icon("undo")
-            ),
+            )),
             br(),
             column(width=12, uiOutput("thresh_abs"))
           #   icon = icon("sliders-h"),
@@ -171,7 +171,7 @@ ui <- fluidPage(
 
     )
   ),
-  mainPanel(tabsetPanel(id = "tabs"))
+  mainPanel(column(width=12, tabsetPanel(id = "tabs")))
 )
 
 
