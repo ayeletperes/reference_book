@@ -38,7 +38,7 @@ g <- allele_db %>% filter(gene_group == g_group) %>% pull(gene) %>% unique()
 
 ## Allele appearnce 
 
-The group of `r group` includes `r sum(grepl(paste0(g,"[*]", collapse = "|"), func$allele))` alleles, `r sum(func$functionality[grepl(paste0(g,"[*]", collapse = "|"), func$allele)])` out of the alleles are functional.
+The group of `r group` includes `r length(grep(g_group,allele_db$new_allele,value=T))` alleles, `r sum(func$functionality[func$allele %in% allele_db$or_allele[grep(g_group,allele_db$new_allele)]])` out of the alleles are functional.
 
 No rearrangments were found for this group, hence the general summary statistics do not apply here and were omitted.
 ## Observations
