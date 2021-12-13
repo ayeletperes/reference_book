@@ -1,0 +1,13 @@
+name: checklist
+title: checklist
+username:
+account: peresay
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5317877
+bundleId: 5366119
+url: https://peresay.shinyapps.io/checklist/
+when: 1639392577.81081
+lastSyncTime: 1639392577.81083
+asMultiple: FALSE
+asStatic: FALSE
