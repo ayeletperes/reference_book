@@ -663,17 +663,17 @@ seq_align <- function(v_calls, allele_db, vgerms, chain, mat, g_group){
   
   p1 <- cowplot::plot_grid(plotlist = p_list, nrow=4, align = "v")
   
-  index <- grep("panel", p1$layout$name)
-  p1$layout$clip[index] = "off"
+  #index <- grep("panel", p1$layout$name)
+  #p1$layout$clip[index] = "off"
   
   
-  p_dend$layout$clip = "off"
+  #p_dend$layout$clip = "off"
   
-  align_plot <- cowplot::plot_grid(plotlist = list(p_dend + theme(plot.margin = margin(b = -1, unit = "cm"))  , p1), nrow =2, rel_heights = c(0.7,0.4), align = "hv")
-  index <- grep("panel", align_plot$layout$name)
-  align_plot$layout$clip[index] = "off"
+  #align_plot <- cowplot::plot_grid(p_dend + theme(plot.margin = margin(b = -1, unit = "cm"))  , p1, nrow =2, rel_heights = c(0.7,0.4), align = "hv")
+  #index <- grep("panel", align_plot$layout$name)
+  #align_plot$layout$clip[index] = "off"
   
-  return(align_plot)
+  return(invisible(lapply(list(p_dend, p1), print)))
 }
 
 rect.dendrogram2 <- function (tree, k = NULL, which = NULL, x = NULL, h = NULL, border = 2, 
