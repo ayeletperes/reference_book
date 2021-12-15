@@ -181,9 +181,9 @@ server <- function(input, output, session) {
   input_vals <-
     reactiveValues(
       tabs_count = 0,
-      g_group = "IGHV1-69G8",
-      g = allele_db %>% dplyr::filter(gene_group == "IGHV1-69G8") %>% pull(gene) %>% unique(),
-      v_gene_cut = "IGHV1-69G8",
+      g_group = "IGHV3-23G19",
+      g = allele_db %>% dplyr::filter(gene_group == "IGHV3-23G19") %>% pull(gene) %>% unique(),
+      v_gene_cut = "IGHV3-23G19",
       allele_thresh = NULL,
       allele_thresh_names = NULL,
       allele_thresh_abs = NULL,
@@ -407,8 +407,8 @@ server <- function(input, output, session) {
         tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq >=  a_thresh$a_thresh[v_allele_axis] /
                                                               100, mut == input$mut)
     }else{
-      print("ok")
-      print(a_thresh$a_thresh_abs)
+      #print("ok")
+      #print(a_thresh$a_thresh_abs)
       tmp <-
         tmp %>% dplyr::group_by(v_allele) %>% dplyr::filter(freq2 >=  a_thresh$a_thresh_abs[v_allele_axis], mut == input$mut)
     }
@@ -629,7 +629,7 @@ server <- function(input, output, session) {
         tmp_haplo <- data %>%
           dplyr::filter(v_gene == input_vals$v_gene_cut,
                         !is.na(v_allele),
-                        group_plot == 2) %>%
+                        group_plot == 2, mut == input$mut) %>%
           ungroup()
 
         tmp_haplo <- tmp_haplo %>% dplyr::group_by(subject) %>%
@@ -1010,25 +1010,26 @@ server <- function(input, output, session) {
           ))
 
           # draw plot according to the point number on hover
-          shiny:::flushReact()
+          #shiny:::flushReact()
+          plot_bar <- plot_bar  %>% rowwise()%>% mutate(text = HTML(
+            paste(
+              '</br>Project: ',
+              project,
+              '</br>Subject: ',
+              subject,
+              '</br>Allele: ',
+              v_allele,
+              '</br># assignments: ',
+              count,
+              '</br>Group normalization freq.: ',
+              freq,
+              '</br>Rep. normalization freq.: ',
+              freq2
+            )
+          ))
+
           plotly::ggplotly(
-            ggplot(
-              plot_bar  %>% rowwise()%>% mutate(text = HTML(
-                paste(
-                  '</br>Project: ',
-                  project,
-                  '</br>Subject: ',
-                  subject,
-                  '</br>Allele: ',
-                  v_allele,
-                  '</br># assignments: ',
-                  count,
-                  '</br>Group normalization freq.: ',
-                  freq,
-                  '</br>Rep. normalization freq.: ',
-                  freq2
-                )
-              )),
+            ggplot(plot_bar,
               aes(v_allele_axis, freq, fill = v_alleles_p, text = text)
             ) +
               geom_col(width = 0.2) + facet_grid(j_call ~ .) + theme_minimal(base_size = 12) +
