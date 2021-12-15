@@ -171,7 +171,7 @@ ui <- fluidPage(
 
     )
   ),
-  mainPanel(column(width=12, tabsetPanel(id = "tabs")))
+  mainPanel(tabsetPanel(id = "tabs"))
 )
 
 
@@ -459,9 +459,11 @@ server <- function(input, output, session) {
                            label = "Download frequency table", style = "width:50%;",class = "butt"),
             br(),
             br(),
-            plotlyOutput(paste0('scatter', i)),
+            #tags$head(tags$style(type = "text/css", "#",paste0('scatter', i)," {width:95vh !important;}")),
+            plotlyOutput(paste0('scatter', i), width = "150%"),
             br(),
             br(),
+            #tags$head(tags$style(type = "text/css", "#",paste0('scatter', i)," {height:95vh !important;}")),
             plotlyOutput(paste0('hover', i))
 
           )
@@ -648,6 +650,13 @@ server <- function(input, output, session) {
 
         plot_data$loc2 <- loc2[plot_data$v_allele_axis]
 
+        validate(need(
+          nrow(plot_data) > 0,
+          paste0(
+            "No rearrangments for this state"
+          )
+        ))
+
         if (state_val$i != 1 &
             length(unique(plot_data$v_alleles_p)) != 1) {
           loc_jitter <- list()
@@ -693,6 +702,12 @@ server <- function(input, output, session) {
         ticktext <-
           plot_data %>% dplyr::pull(v_allele_axis) %>% unique() %>% sort()
 
+        validate(need(
+          nrow(plot_data) > 0,
+          paste0(
+            "No rearrangments for this state"
+          )
+        ))
 
         plot_data_final <- plot_data %>%
           highlight_key(., ~ subject)
@@ -884,7 +899,7 @@ server <- function(input, output, session) {
         ) %>% plotly::layout(
           legend = list(
             orientation = 'h',
-            y = -0.2,
+            y = -0.5 - max(nchar(names(allele_thresh_state_absolute)))/100,
             x = 0
           ),
           xaxis = list(
@@ -915,7 +930,7 @@ server <- function(input, output, session) {
 
         return(
           #onRender(
-          list(plot=s %>%
+          list(plot=s %>% plotly::layout(margin = list(t = 50)) %>%
               plotly::event_register('plotly_click') %>% plotly::config(displayModeBar = T, #edits = list(shapePosition = TRUE),
                                                                         scrollZoom = FALSE),
               table = plot_data))
