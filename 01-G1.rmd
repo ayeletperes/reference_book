@@ -63,9 +63,9 @@ To examine the potential cutoff we observed the sequence depth for each allele
 tagList(sequence_depth(data, g_group, allele_db))
 ```
 
-## 0.5% cutoff 
+## Absolute cutoff
 
-We set an initial cutoff of $0.5\%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
+We set an initial cutoff of $0.01\%$ to determine the potential genotype priors. For this cutoff we examined the zygousity state, such as homozygousity, heterozygousity and so on.
 
 
 ```{r}
@@ -101,63 +101,22 @@ You can access the file also from [here](`r edit_links[grep(g_group,edit_links)]
 
 ```{r, message=F, echo=F, warning=F}
 knitr::include_url("https://functionalgroupsnotes.wordpress.com/ighv1-18g1-notes", height = "1100px")
-#paste0("https://peresay.shinyapps.io/G2_group/?group=",g_group)
-# Authenticate and save token for later use2
-# token <- drop_auth(rdstoken = "dropbox_token.rds")
-# 
-# # Retrieveing your file is as simple as
-# drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
-#               overwrite = TRUE, verbose = F)
-# #drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
-# invisible(rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = FALSE))
-# 
-# ui <- fluidPage(
-# 
-#     # Application title
-#     mainPanel(
-#       shiny::actionButton(inputId='ab1', label="Edit text", 
-#                           icon = icon("edit"), 
-#                           onclick ="window.open('https://www.dropbox.com/scl/fi/p7wwxwxsgtk2j425oi1jx/IGHV1-18.docx?dl=0&rlkey=m6dwbte5avwqmdlfiwjs973t5')"),
-#       
-#       shiny::actionButton(inputId='ab2', label="Reload text", 
-#                           icon = icon("sync-alt")),
-#       
-#       htmlOutput("df_output")
-#     )
-# )
-# 
-# server <- function(input, output) {
-#   
-#   observeEvent(input$ab2, {
-#       drop_download("public/conclusions/IGHV1-18.docx", local_path = "docs/IGHV1-18.docx",
-#                 overwrite = TRUE, verbose = F)
-#       #drop_df <- textreadr::read_docx("docs/IGHV1-18.docx")
-#       
-#       rmarkdown::pandoc_convert(input = "IGHV1-18.docx", to = "markdown", output = "IGHV1-18_docx.md", options = c("--wrap=none","--reference-links","--metadata-file=metadata.yaml","--standalone"), verbose = F)
-#       output$markdown <- renderUI({
-#         withMathJax(includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE)))
-#     })
-#     
-#   })
-#   
-#   output$markdown <- renderUI({
-#     includeMarkdown(knitr::knit('docs/IGHV1-18_docx.md', quiet = TRUE))
-#   })
-# }
-# 
-# shinyApp(ui = ui, server = server)
-
 ```
 
 ## Conclusions
 
-From the results we believe that the cutoff for this group should be closer to $5\%$, and for the adjusted states the allele combinations and the relations are stated in the table below.
+From the results we believe that the cutoff for this group should be 
+```{r} 
+DT::datatable(data.frame(thresholds = absolute_thresholds_dict[[g_group]]))
+```
 
-### Allele specific cutoff: 5\% for all except 0.5\% for allele **03**
+and for the adjusted states the allele combinations and the relations are stated in the table below.
+
+### Allele specific cutoff
 
 ```{r}
 
-tableData <- data_cutoff(data, func_groups, g_group, 5, or_allele) %>% dplyr::group_by(zygousity_state, v_allele) %>% dplyr::summarise(mean_freq = paste0(round(quantile(freq, 3/4),3),":", round(quantile(freq, 1/4),3)), v_alleles_abc = unique(v_alleles_abc)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(mean_freq, collapse = ";"))
+tableData <- data_cutoff(data, func_groups, g_group, 5, or_allele) %>% dplyr::group_by(zygousity_state, v_allele) %>% dplyr::summarise(mean_freq = paste0(round(quantile(freq2, 3/4),3),":", round(quantile(freq2, 1/4),3)), v_alleles_abc = unique(v_allele_axis)) %>% dplyr::group_by(zygousity_state, v_alleles_abc) %>% dplyr::summarise(fractions = paste0(mean_freq, collapse = ";"))
 
 DT::datatable(
         tableData,
@@ -174,31 +133,15 @@ DT::datatable(
 # column names change to Zygousity state, alleles combinations, IQR 
 
 ```
-
-For interactive play on the threshold and relative allele fractions, please refer to [this site](https://peresay.shinyapps.io/cluster_app/?url=%22page_allele%22&func_group=%22IGHV1-2%22&allele_thresh=%252%22){target="_blank"}
-
-
-```{r}
-
-tmp_allele_db <-
-  allele_db %>% filter(grepl(func_groups[as.character(g)], new_allele)) %>%
-  dplyr::group_by(new_allele) %>% dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
-
-or_allele <-
-  setNames(gsub(chain, "", as.character(tmp_allele_db$or_allele)), as.character(gsub(
-    paste0(func_groups[as.character(g)], "[*]"),
-    "",
-    tmp_allele_db$new_allele
-  )))
-
-allele_thresh = setNames(rep(5,length(names(or_allele))),names(or_allele))
-allele_thresh["V1-18*03"]<-0.5
-
-tmp <- data_cutoff(data, func_groups, g_group, allele_thresh, or_allele)
-
+```{r, out.height= "100%", out.width="100%"}
+m <- list(
+    l = 50,
+    r = 50,
+    b = 100,
+    t = 100,
+    pad = 0.5
+)
+heatmap_alleles(data, g_group, allele_db, func)%>%
+  layout(autosize = F, width = 800, height = 1300)
 ```
 
-```{r, eval=knitr::is_html_output(excludes = "epub"), results = 'asis', echo = F}
-
-source_haplo_usage_specific(g_group,paste0(or_allele, "q", allele_thresh, collapse = "b"))
-```
