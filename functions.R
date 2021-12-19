@@ -1,4 +1,267 @@
 ## functions
+absolute_thresholds_dict <- list(
+  "IGHV1-18G1" = c(
+    "V1-18*01" = 0.001,
+    "V1-18*04" = 0.001,
+    "V1-18*03" = 0.0001
+  ),
+  "IGHV1-2G2" = c(
+    "V1-2*02" = 0.001,
+    "V1-2*04" = 0.0001,
+    "V1-2*05" = 0.0001,
+    "V1-2*06" = 0.001,
+    "V1-2*07" = 0.0001
+  ),
+  "IGHV1-24G3" = c("V1-24*01" = 0.0001),
+  "IGHV1-3G4" = c(
+    "V1-3*01" = 0.0001,
+    "V1-3*02" = 0.0001,
+    "V1-3*04"  = 0.001,
+    "V1-3*05" = 0.0001
+  ),
+  "IGHV1-45G5" = c("V1-45*02" = 0.0001, "V1-45*03" = 0.0001),
+  "IGHV1-46G6" = c(
+    "V1-46*01" = 0.001,
+    "V1-46*02" = 0.0001,
+    "V1-46*03" = 0.001,
+    "V1-46*04" = 0.001
+  ),
+  "IGHV1-58G7" = c(
+    "V1-58*01" = 0.0001,
+    "V1-58*02" = 0.0001,
+    "V1-58*03" = 0.001
+  ),
+  "IGHV1-69G8" = c(
+    "V1-69D*01" = 0.001,
+    "V1-69*01" = 0.001,
+    "V1-69*06" = 0.001,
+    "V1-69*09" = 0.001,
+    "V1-69*04" = 0.001,
+    "V1-69*02" = 0.001,
+    "V1-69*04_C184T" = 0.001,
+    "V1-69*18" = 0.001,
+    "V1-69*19" = 0.0001,
+    "V1-69*14" = 0.001,
+    "V1-69*12" = 0.001,
+    "V1-69*05" = 0.001,
+    "V1-69*13" = 0.001,
+    "V1-69*10" = 0.001,
+    "V1-69*17" = 0.001,
+    "V1-69*08" = 0.001,
+    "V1-69*15" = 0.001
+  ),
+  "IGHV1-69-2G9" = c("V1-69-2*01" = 0.0001),
+  "IGHV1-8G10" = c(
+    "V1-8*01" = 0.0001,
+    "V1-8*02" = 0.001,
+    "V1-8*03" = 0.001
+  ),
+  "IGHV2-26G11" = c(
+    "V2-26*01" = 0.0001,
+    "V2-26*02" = 0.0001,
+    "V2-26*03" = 0.0001,
+    "V2-26*04" = 0.0001
+  ),
+  "IGHV2-5G12" = c(
+    "V2-5*01" = 0.001,
+    "V2-5*02" = 0.0005,
+    "V2-5*04" = 0.001,
+    "V2-5*05" = 0.001,
+    "V2-5*08" = 0.001
+  ),
+  "IGHV2-70G13" = c(
+    "V2-70*01" = 0.0001,
+    "V2-70*13" = 0.001,
+    "V2-70*15" = 0.0001,
+    "V2-70*17" = 0.0001,
+    "V2-70*20" = 0.0001,
+    "V2-70D*04" = 0.007,
+    "V2-70*04" = 0.007
+  ),
+  "IGHV3-11G14" = c(
+    "V3-11*01" = 0.001,
+    "V3-11*04" = 0.001,
+    "V3-11*05" = 0.001,
+    "V3-11*06" = 0.0001
+  ),
+  "IGHV3-13G15" = c(
+    "V3-13*01" = 0.001,
+    "V3-13*04" = 0.0001,
+    "V3-13*05" = 0.0001,
+    "V3-13*03" = 0.001
+  ),
+  "IGHV3-15G16" = c(
+    "V3-15*01" = 0.0001,
+    "V3-15*01_A313T" = 0.001,
+    "V3-15*02" = 0.0001,
+    "V3-15*04" = 0.001,
+    "V3-15*05" = 0.001,
+    "V3-15*07" = 0.0001
+  ),
+  "IGHV3-20G17" = c("V3-20*01" = 0.0001, "V3-20*04" = 0.0001),
+  "IGHV3-21G18" = c(
+    "V3-21*01" = 0.001,
+    "V3-21*02" = 0.001,
+    "V3-21*03" = 0.001,
+    "V3-21*04" = 0.001,
+    "V3-21*06" = 0.001,
+    "V3-21*01_A184G_T190A_A191C" = 0.001,
+    "V3-21*05" = 0.001
+  ),
+  "IGHV3-23G19" = c("V3-23D" = 0.001, "V3-23*01" = 0.001, "V3-23*04" = 0.001),
+  "IGHV3-30G20" = c(
+    "V3-30-3*01" = 0.0001,
+    "V3-33*01" = 0.0001,
+    "V3-30*03" = 0.0001,
+    "V3-30-3*03" = 0.001,
+    "V3-30*04" = 0.001,
+    "V3-33*06" = 0.001,
+    "V3-30*01" = 0.0001,
+    "V3-30*10" = 0.001,
+    "V3-30*11" = 0.0001,
+    "V3-33*08" = 0.001,
+    "V3-30*02_G49A" = 0.001,
+    "V3-30*19_T189C" = 0.0001,
+    "V3-30*16" = 0.001,
+    "V3-30*14" = 0.0001,
+    "V3-33*05" = 0.001,
+    "V3-30*07" = 0.001,
+    "V3-30-3*02" = 0.0001,
+    "V3-30*09" = 0.0001,
+    "V3-33*03" = 0.0001,
+    "V3-30*15" = 0.0001,
+    "V3-30*19" = 0.0001
+  ),
+  "IGHV3-35G21" = c("V3-35*02" = 0.0001),
+  "IGHV3-43G22" = c(
+    "V3-43*02" = 0.0001,
+    "V3-43D*04_G4A" = 0.0001,
+    "V3-43*01" = 0.0001,
+    "V3-43D*03" = 0.0001,
+    "V3-43D*04" = 0.0001
+  ),
+  "IGHV3-48G23" = c(
+    "V3-48*03" = 0.001,
+    "V3-48*02" = 0.001,
+    "V3-48*01" = 0.001,
+    "V3-48*04" = 0.001
+  ),
+  "IGHV3-49G24" = c(
+    "V3-49*05" = 0.0001,
+    "V3-49*04" = 0.0001,
+    "V3-49*03" = 0.0001
+  ),
+  "IGHV3-53G25" = c(
+    "V3-53*01" = 0.0001,
+    "V3-53*04" = 0.0001,
+    "V3-66*01" = 0.0001,
+    "V3-66*04" = 0.0001,
+    "V3-66*02" = 0.0001,
+    "V3-53*02" = 0.001,
+    "V3-66*03" = 0.0001,
+    "V3-66*02_G303A" = 0.0001
+  ),
+  "IGHV3-64G27" = c(
+    "V3-64D*06" = 0.0001,
+    "V3-64*02" = 0.0001,
+    "V3-64*01" = 0.0001,
+    "V3-64D*09" = 0.0001,
+    "V3-64D*08" = 0.0001,
+    "V3-64*07" = 0.001
+  ),
+  "IGHV3-7G28" = c(
+    "V3-7*03" = 0.001,
+    "V3-7*01" = 0.001,
+    "V3-7*04" = 0.0001,
+    "V3-7*02" = 0.001,
+    "V3-7*05" = 0.0001
+  ),
+  "IGHV3-72G29" = c("V3-72*01" = 0.0001),
+  "IGHV3-73G30" = c("V3-73*01" = 0.0001, "V3-73*02" = 0.0001),
+  "IGHV3-74G31" = c("V3-74*01" = 0.0001, "V3-74*03" = 0.001),
+  "IGHV3-9G32" = c(
+    "V3-9*01" = 0.0001,
+    "V3-9*02"  = 0.001,
+    "V3-9*01_T307C" = 0.0001,
+    "V3-9*03" = 0.0001
+  ),
+  "IGHV4-28G33" = c(
+    "V4-28*05"  = 0.0001,
+    "V4-28*07" = 0.0001,
+    "V4-28*02" = 0.0001,
+    "V4-28*06" = 0.0001
+  ),
+  "IGHV4-30-2G34" = c(
+    "V4-30-2*01" = 0.0001,
+    "V4-30-4*07" = 0.0001,
+    "V4-30-2*06" = 0.0001,
+    "V4-30-2*05" = 0.0001
+  ),
+  "IGHV4-30-4G35" = c(
+    "V4-31*03" = 0.0001,
+    "V4-30-4*01" = 0.001,
+    "V4-31*01" = 0.0001,
+    "V4-30-4*01_A70G_A107G" = 0.0001,
+    "V4-31*11" = 0.0001,
+    "V4-30-4*08" = 0.001,
+    "V4-31*02" = 0.001
+  ),
+  "IGHV4-34G36" = c(
+    "V4-34*01"  = 0.0001,
+    "V4-34*12" = 0.001,
+    "V4-34*02" = 0.002
+  ),
+  "IGHV4-38-2G39" = c(
+    "V4-39*01" = 0.0001,
+    "V4-39*02_C258G" = 0.0001,
+    "V4-38-2*01" = 0.0001,
+    "V4-39*07" = 0.001,
+    "V4-38-2*02" = 0.001,
+    "V4-39*01_C66G" = 0.0001,
+    "V4-39*07_C288A" = 0.001,
+    "V4-39*05" = 0.001,
+    "V4-39*02" = 0.0001
+  ),
+  "IGHV4-4G40" = c(
+    "V4-4*02" = 0.0001,
+    "V4-4*03" = 0.001,
+    "V4-4*02_A106G" = 0.001,
+    "V4-4*01" = 0.001
+  ),
+  "IGHV4-4G41" = c(
+    "V4-59*01" = 0.0001,
+    "V4-59*08" = 0.0001,
+    "V4-59*11" = 0.001,
+    "V4-4*07" = 0.0001,
+    "V4-59*07" = 0.0001,
+    "V4-59*12" = 0.001,
+    "V4-59*01_G267A" = 0.0001,
+    "V4-59*02" = 0.005,
+    "V4-59*13" = 0.0001,
+    "V4-59*04" = 0.0001
+  ),
+  "IGHV4-61G44" = c(
+    "V4-61*01" = 0.0001,
+    "V4-61*08" = 0.001,
+    "V4-61*01_A41G" = 0.0001,
+    "V4-61*03" = 0.0001
+  ),
+  "IGHV4-61G45" = c("V4-61*02" = 0.001, "V4-61*02_A234G" = 0.001),
+  "IGHV5-10-1G46" = c(
+    "V5-10-1*03" = 0.001,
+    "V5-10-1*01" = 0.001,
+    "V5-10-1*02" = 0.0001
+  ),
+  "IGHV5-51G47" = c(
+    "V5-51*01" = 0.0001,
+    "V5-51*03" = 0.0001,
+    "V5-51*04" = 0.0001,
+    "V5-51*06" = 0.0001,
+    "V5-51*07" = 0.0001
+  ),
+  "IGHV6-1G48" = c("V6-1*01" =  0.0001, "V6-1*01_T91C" =  0.0001),
+  "IGHV7-4-1G49" = c("V7-4-1*01" =  0.0001, "V7-4-1*02" =  0.0001)
+)
 
 
 allele_appearance <- function(data_, g_group, allele_db){
@@ -353,21 +616,20 @@ plot_zygousity <- function(tmp, state, allele_thresh, g){
 }
 
 data_cutoff <- function(tmp, func_groups, g_group, allele_thresh = 0.5, or_allele){
-  v_gene_cut <- ifelse(grepl("G",g_group), g_group, func_groups[as.character(g_group)])
+  
   tmp <- tmp %>%
-    dplyr:: filter(v_gene == v_gene_cut, !is.na(v_allele), is.na(j_call)) %>% 
+    dplyr:: filter(v_gene == g_group, !is.na(v_allele), is.na(j_call), mut == 0) %>% 
     ungroup()
   
-  tmp <- tmp %>% dplyr::group_by(subject)
+  thresholds <- absolute_thresholds_dict[[g_group]]
+  
+  
+  tmp <- tmp %>% rowwise() %>% dplyr::mutate(v_allele_axis = or_allele[v_allele])
   
   tmp <- tmp %>% dplyr::arrange(desc(freq)) %>%
-    dplyr::group_by(subject, v_gene) %>% dplyr::mutate(
-      zygousity_state = as.numeric(sum(freq > allele_thresh/100, na.rm = T)),
-      v_alleles = paste0(1:unique(zygousity_state), " - ", or_allele[v_allele[1:unique(zygousity_state)]], collapse = ";"),
-      v_alleles_abc = paste0(sort(or_allele[v_allele[1:unique(zygousity_state)]]), collapse = ";"),
-      v_allele_axis = or_allele[v_allele]
+    dplyr::group_by(subject) %>% dplyr::mutate(
+      zygousity_state = as.numeric(sum(freq2 > thresholds[unique(v_allele_axis)], na.rm = T))
     ) %>% arrange(subject)
-  tmp <- tmp %>% dplyr::group_by(subject, zygousity_state) %>% dplyr::mutate(loc_state = loc <= zygousity_state) %>% filter(loc_state) %>% ungroup()
   
   return(tmp)
 }
@@ -813,4 +1075,136 @@ source_haplo_usage_specific <- function(g_group, allele_thresh){
 ' scrolling="yes" border="0" frameborder="0" style="border-style:none;box-shadow:0px 0px 2px 2px rgba(0,0,0,0.2); width: 100%;height:800px;overflow-x: scroll !important;overflow: scroll;" cellspacing="0">
   </iframe>\n\n</div>', sep = ""
   )
+}
+
+heatmap_alleles <- function(data, g_group = "IGHV6-1G48", allele_db, func){
+
+  
+  groups <- setNames(allele_db$gene_group, allele_db$or_allele)
+  func$group <- groups[func$allele]
+
+  tmp_allele_db <- allele_db %>%
+    dplyr::group_by(new_allele) %>% 
+    dplyr::summarise(or_allele = paste0(or_allele, collapse = "/"))
+  
+  or_allele <- setNames(tmp_allele_db$or_allele, tmp_allele_db$new_allele)
+
+  threhsolds <- absolute_thresholds_dict[[g_group]]
+  data_cluster <- data[, v_allele_axis := or_allele[v_call]]
+  data_cluster$group_plot <- ifelse(is.na(data_cluster$j_call), 1, 2)
+  data_cluster <- data_cluster[v_gene==g_group & mut == 0 & group_plot == 1]
+  data_cluster <- data_cluster[, .(v_allele_axis = unlist(tstrsplit(v_allele_axis, "/", type.convert = FALSE))), by = setdiff(names(data_cluster), "v_allele_axis")]
+  data_cluster <- data_cluster %>% dplyr::group_by(v_allele_axis) %>% dplyr::filter(freq2 >=  threhsolds[gsub("IGH","",v_allele_axis)]) %>% as.data.table()
+  #data_cluster <- data_cluster[freq2>0.001]
+  
+  n_alleles <- func %>% filter(group==g_group) %>% rowwise() %>% mutate(allele_num = strsplit(allele, "[*]")[[1]][2]) %>% dplyr::arrange(allele_num)
+  subjects <- unique(data_cluster$subject)
+  alleles <- n_alleles$allele
+  alleles_cols <- ifelse(n_alleles$functionality, "black", "red")
+  allele_show <- matrix(0,nrow = length(subjects), ncol = nrow(n_alleles), 
+                        dimnames = list(subjects, alleles))
+  
+  for(samp in subjects){
+    tmp <- data_cluster[subject==samp]
+    alleles <- unique(tmp$v_allele_axis)
+    allele_show[samp,alleles] <- 1
+  }
+  library(heatmaply)
+  p <- heatmaply(allele_show, 
+                 dendrogram = "row",
+                 xlab = "", ylab = "", 
+                 main = "", colors = c("gray","black"),
+                 grid_color = "white",
+                 grid_width = 0.0001,
+                 titleX = FALSE,
+                 hide_colorbar = TRUE,
+                 branches_lwd = 0.5,
+                 fontsize_row = 5, fontsize_col = 5,
+                 label_names = c("Subject", "Allele", "Found"),
+                 labCol = colnames(allele_show),
+                 labRow = rownames(allele_show),
+                 heatmap_layers = theme(axis.line=element_blank())
+  )
+  
+  hline <- function(y = 0, color = "red", x0 = 0, x1 = 1) {
+    list(
+      type = "line",
+      x0 = x0,
+      x1 = x1,
+      xref = "xaxis",
+      y0 = y,
+      y1 = y,
+      line = list(color = color, dash = "dot")
+    )
+  }
+  
+  
+  data_cluster$v_allele_axis2 <- factor(data_cluster$v_allele_axis, n_alleles$allele)
+  data_cluster$v_allele_axis3 <- as.numeric(data_cluster$v_allele_axis2)
+  ticktext <- levels(data_cluster$v_allele_axis2)
+  tickvals <- 1:length(ticktext)
+  plotly2 <-
+    data_cluster %>%
+    highlight_key(., ~ subject) %>%
+    plotly::plot_ly(colors = c("orange","blue")) %>% 
+    plotly::add_trace(
+      type = "scatter",
+      x = ~ jitter(v_allele_axis3),
+      y = ~ freq2,
+      symbol = ~ project,
+      mode = 'markers',
+      color = ~ project,
+      #showlegend = FALSE,
+      opacity = 0.9,
+      #hoverinfo = 'text',
+      legendgroup = ~ project
+    ) %>%
+    plotly::add_trace(
+      x = ~ v_allele_axis3,
+      y = ~ freq2,
+      type = "box",
+      hoverinfo = "none",
+      fillcolor = "transparent",
+      showlegend = FALSE
+    ) %>%
+    plotly::layout(
+      hovermode = 'closest',
+      shapes = lapply(1:length(ticktext), function(ia) {
+        a = gsub("IGH","",ticktext[ia])
+        xx = tickvals
+        hline(
+          ifelse(is.na(as.numeric(threhsolds[a])), 0.0001, as.numeric(threhsolds[a])),
+          x0 = xx[ia] -
+            0.25,
+          x1 = xx[ia] + 0.25,
+          color = "gray"
+        )
+      }),
+      xaxis = list(
+        title = paste0("Alleles"),
+        tickfont = list(size = 6.64176, color = "rgba(77,77,77,1)"),
+        tickangle = -90,
+        range = c(.5,length(n_alleles$allele)+0.5),
+        autotick = F,
+        tickmode = "array",
+        tickvals = tickvals,
+        ticktext = ticktext
+      ),
+      yaxis = list(title = "Rep.\nnormalization",range = c(0, NULL))
+      #,range = c(0, 0.5))
+    )%>%
+    plotly::highlight(
+      on = "plotly_click",
+      opacityDim = 0.3, 
+      off = "plotly_doubleclick",
+      selected = attrs_selected(showlegend = F),
+      persistent = F
+    )
+  # plotly2$x$data <- lapply(plotly2$x$data, FUN = function(x){
+  #   if(x$marker$line$color=="rgba(0,0,0,1)") x$marker = list(opacity = 0)
+  #   return(x)
+  # })
+  subplot(subplot(plotly2, plotly_empty(), widths = c(0.82,0.18)), p, nrows = 2, margin = 0.04)
+  
+  
 }
