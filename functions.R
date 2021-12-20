@@ -1141,20 +1141,27 @@ heatmap_alleles <- function(data, g_group = "IGHV6-1G48", allele_db, func){
   
   data_cluster$v_allele_axis2 <- factor(data_cluster$v_allele_axis, n_alleles$allele)
   data_cluster$v_allele_axis3 <- as.numeric(data_cluster$v_allele_axis2)
+  
+  data_cluster <- data_cluster %>% dplyr::arrange(desc(freq2)) %>%
+    dplyr::group_by(subject) %>% dplyr::mutate(
+      zygousity_state = dplyr::n()
+    ) %>% arrange(subject) %>% rowwise() %>% mutate(text = paste0(subject, ",", v_allele_axis, ",", freq2, ",", zygousity_state))
+  
   ticktext <- levels(data_cluster$v_allele_axis2)
   tickvals <- 1:length(ticktext)
+  
   plotly2 <-
     data_cluster %>%
     highlight_key(., ~ subject) %>%
-    plotly::plot_ly(colors = c("orange","blue")) %>% 
+    plotly::plot_ly() %>% 
     plotly::add_trace(
       type = "scatter",
       x = ~ jitter(v_allele_axis3),
       y = ~ freq2,
       symbol = ~ project,
       mode = 'markers',
-      color = ~ project,
-      #showlegend = FALSE,
+      color = ~ as.factor(zygousity_state),
+      showlegend = TRUE,
       opacity = 0.9,
       #hoverinfo = 'text',
       legendgroup = ~ project
